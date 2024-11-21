@@ -19,9 +19,9 @@ W generowaniu planszy można będzie pokusić się o jakąś współbieżność 
 Ogólnie efektywność programu będzie ważnym elementem całej aplikacji, na razie założyłbym, że celuję w program generujący sudoko 6x6 z przyczyn obliczeniowych, jeśli się uda to chciałbym to doprowadzić do 9x9
 
 Etap 1:
-- napisanie programu, który dla wejścia będącego standardową planszą sudoku znajduje jego rozwiązanie (rekurencyjnie i jednowątkowo)
+- (DONE) napisanie programu, który dla wejścia będącego standardową planszą sudoku znajduje jego rozwiązanie (rekurencyjnie i jednowątkowo)
 - stworzenie interfejsu, który pozwala dodawać dodatkowe ograniczenia, przykładowo zbiory pól, które mają spełniać jeden z dwóch warunków (suma/bycie permutacją)
-- wzbogacenie programu rozwiązującego o sprawdzanie dodanych powyższych warunków
+- (DONE) wzbogacenie programu rozwiązującego o sprawdzanie dodanych powyższych warunków
 - powyższe rzeczy na razie będą działy się w konsoli i miały CLI 
 
 Etap 2:

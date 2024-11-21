@@ -1,11 +1,14 @@
-use crate::board::{Board, Position};
-use crate::rules::{PermutationRule, Rule};
-use crate::solver::Solver;
+use userinput::await_rule;
+
+use crate::board::*;
+use crate::rules::*;
+use crate::solver::*;
 use std::io::{self};
 
 mod board;
 mod rules;
 mod solver;
+mod userinput;
 
 struct Game {
     board: Board,
@@ -15,20 +18,20 @@ struct Game {
 impl Game {
     fn new(side: usize, sub_rows: usize, sub_cols: usize) -> Self {
         let mut game = Game {
-            board: Board::new(side),
+            board: Board::new(),
             rules: Vec::new(),
         };
 
         for row in 0..side {
             let positions: Vec<Position> = (0..side)
-                .filter_map(|col| Position::new(row + 1, col + 1, side))
+                .filter_map(|col| Position::new(row + 1, col + 1))
                 .collect();
             game.add_rule(Rule::Permutation(PermutationRule { positions }));
         }
 
         for col in 0..side {
             let positions: Vec<Position> = (0..side)
-                .filter_map(|row| Position::new(row + 1, col + 1, side))
+                .filter_map(|row| Position::new(row + 1, col + 1))
                 .collect();
             game.add_rule(Rule::Permutation(PermutationRule { positions }));
         }
@@ -40,7 +43,7 @@ impl Game {
                     for col in 0..sub_cols {
                         let pos_row = sub_row * sub_rows + row + 1;
                         let pos_col = sub_col * sub_cols + col + 1;
-                        if let Some(pos) = Position::new(pos_row, pos_col, side) {
+                        if let Some(pos) = Position::new(pos_row, pos_col) {
                             positions.push(pos);
                         }
                     }
@@ -48,8 +51,6 @@ impl Game {
                 game.add_rule(Rule::Permutation(PermutationRule { positions }));
             }
         }
-
-        //
 
         game
     }
@@ -86,55 +87,18 @@ impl Game {
             (Some(violations), Some(pending))
         }
     }
-
-    fn input_and_set_value(&mut self) -> bool {
-        println!("Enter row, column, and value (e.g., 1 1 1) or 'q' to quit:");
-
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read line");
-
-        if input.trim() == "q" {
-            return false;
-        }
-
-        let parts: Vec<&str> = input.split_whitespace().collect();
-        if parts.len() != 3 {
-            println!("Invalid input. Please enter row, column, and value.");
-            return true;
-        }
-
-        let pos = match Position::new(
-            parts[0].parse().unwrap_or_default(),
-            parts[1].parse().unwrap_or_default(),
-            self.board.get_side(),
-        ) {
-            Some(pos) => pos,
-            None => {
-                println!("Invalid row or column. Please enter valid numbers.");
-                return true;
-            }
-        };
-
-        let value: usize = match parts[2].parse() {
-            Ok(num) => num,
-            Err(_) => {
-                println!("Invalid value. Please enter a valid number.");
-                return true;
-            }
-        };
-
-        self.board.set_value(pos, value);
-        true
-    }
 }
 
 fn main() {
     let mut game = Game::new(4, 2, 2); // 3x3 Sudoku board
 
-    for i in 1..=4 {
-        game.board.set_value(Position::new(i, i, 4).unwrap(), i);
+    loop {
+        let x = await_rule();
+        if x.1 == 0 {
+            break;
+        } else if x.1 == 2 {
+            game.add_rule(x.0.unwrap());
+        }
     }
 
     // loop {

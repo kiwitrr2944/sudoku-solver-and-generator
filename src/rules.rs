@@ -73,8 +73,8 @@ impl PermutationRule {
 }
 
 pub struct RelationRule {
-    position1: Position,
-    position2: Position,
+    pub position1: Position,
+    pub position2: Position,
 }
 
 impl RelationRule {
