@@ -52,6 +52,7 @@ impl Solver {
         if self.board.is_filled() {
             if state == 2 {
                 self.solutions.push(self.board.clone());
+                self.board.display();
             }
             return;
         }

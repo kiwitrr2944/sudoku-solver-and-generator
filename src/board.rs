@@ -1,4 +1,9 @@
-const SIDE: usize = 4;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+use std::thread::sleep;
+use std::time::Duration;
+
+const SIDE: usize = 6;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
@@ -22,16 +27,25 @@ pub struct Board {
     size: usize,
     filled: usize,
     board: Vec<Vec<Option<usize>>>,
+    order: Vec<Position>,
 }
 
 impl Board {
     pub fn new() -> Self {
         let size = SIDE * SIDE;
+        let mut order: Vec<Position> = (1..=size)
+            .map(|x| Position::new((x - 1) / SIDE + 1, (x - 1) % SIDE + 1).unwrap())
+            .collect();
+
+        // Shuffle the order vector
+        let mut rng = thread_rng();
+        order.shuffle(&mut rng);
         Board {
             side: SIDE,
             size,
             filled: 0,
             board: vec![vec![None; SIDE]; SIDE],
+            order,
         }
     }
 
@@ -48,6 +62,7 @@ impl Board {
             }
             println!();
         }
+        println!();
     }
 
     pub fn set_value(&mut self, pos: Position, value: usize) {
@@ -74,14 +89,7 @@ impl Board {
     }
 
     pub fn get_next_position(&self) -> Position {
-        for row in 1..=self.side {
-            for col in 1..=self.side {
-                if self.board[row - 1][col - 1].is_none() {
-                    return Position::new(row, col).unwrap();
-                }
-            }
-        }
-        Position::new(0, 0).unwrap()
+        self.order[self.filled]
     }
 
     pub fn clear_value(&mut self, pos: Position) {

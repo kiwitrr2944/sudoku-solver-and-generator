@@ -90,7 +90,9 @@ impl Game {
 }
 
 fn main() {
-    let mut game = Game::new(4, 2, 2); // 3x3 Sudoku board
+    let mut game = Game::new(6, 2, 3); // 3x3 Sudoku board
+    dbg!("Game created");
+    game.board.display();
 
     loop {
         let x = await_rule();
