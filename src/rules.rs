@@ -1,17 +1,22 @@
 use crate::board::{Board, Position};
+use serde::{Deserialize, Serialize};
 
+
+#[derive(Deserialize, Serialize)]
 pub enum Rule {
     Sum(SumRule),
     Permutation(PermutationRule),
     Relation(RelationRule),
 }
 
+#[derive(Deserialize, Serialize)]
 pub enum RuleCheckResult {
     Critical(String),
     Unfulfilled(String),
     Ok,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct SumRule {
     pub positions: Vec<Position>,
     pub sum: usize,
@@ -39,6 +44,7 @@ impl SumRule {
     }
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct PermutationRule {
     pub positions: Vec<Position>,
 }
@@ -72,6 +78,7 @@ impl PermutationRule {
     }
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct RelationRule {
     pub position1: Position,
     pub position2: Position,
@@ -83,7 +90,7 @@ impl RelationRule {
         let value2 = board.get_value(self.position2);
         if value1.is_none() || value2.is_none() {
             RuleCheckResult::Unfulfilled(format!(
-                "RULE (relation): positions {:?} and {:?} are not filled",
+                "RULE (relation): position {:?} or {:?} not filled",
                 self.position1, self.position2
             ))
         } else if value1.unwrap() >= value2.unwrap() {

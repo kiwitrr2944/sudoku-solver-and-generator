@@ -1,15 +1,17 @@
-use userinput::await_rule;
-
+use serde::{Deserialize, Serialize};
+use crate::userinput::*;
 use crate::board::*;
 use crate::rules::*;
 use crate::solver::*;
-use std::io::{self};
+use std::fs;
+use std::path::Path;
 
 mod board;
 mod rules;
 mod solver;
 mod userinput;
 
+#[derive(Serialize, Deserialize)]
 struct Game {
     board: Board,
     rules: Vec<Rule>,
@@ -87,10 +89,17 @@ impl Game {
             (Some(violations), Some(pending))
         }
     }
+
+    pub fn save_to_file(&self, filename: &str) {
+        let path = Path::new(filename);
+        let serialized = serde_json::to_string(&self).unwrap();
+        dbg!("Saving to file");
+        fs::write(path, serialized);
+    }
 }
 
 fn main() {
-    let mut game = Game::new(6, 2, 3); // 3x3 Sudoku board
+    let mut game = Game::new(4, 2, 2); 
     dbg!("Game created");
     game.board.display();
 
@@ -102,45 +111,52 @@ fn main() {
             game.add_rule(x.0.unwrap());
         }
     }
+    
+    loop {
+        game.board.display();
 
-    // loop {
-    //     game.board.display();
+        let (position, filename) = await_input();
 
-    //     if !game.input_and_set_value() {
-    //         break;
-    //     }
+        match position {
+            Some((pos, value)) => {
+                game.board.set_value(pos, value);
+            }
+            None => {
+                if filename == "quit" {
+                    break;
+                }
+                else if !filename.is_empty() {
+                    game.save_to_file(&filename);
+                }
+                else {
+                    continue;
+                }
+            }
+        }
 
-    //     match game.check_rules() {
-    //         (Some(violations), Some(pending)) => {
-    //             println!("Violations:");
-    //             for violation in violations {
-    //                 println!("{}", violation);
-    //             }
+        let (violations, pending) = game.check_rules();
 
-    //             println!("Pending:");
-    //             for pending_rule in pending {
-    //                 println!("{}", pending_rule);
-    //             }
-    //         }
-    //         (Some(violations), None) => {
-    //             println!("Violations:");
-    //             for violation in violations {
-    //                 println!("{}", violation);
-    //             }
-    //         }
-    //         (None, Some(pending)) => {
-    //             println!("Pending:");
-    //             for pending_rule in pending {
-    //                 println!("{}", pending_rule);
-    //             }
-    //         }
-    //         (None, None) => {
-    //             println!("All rules satisfied!");
-    //         }
-    //     }
-    // }
+        if violations.is_none() && pending.is_none() {
+            println!("All rules satisfied!");
+        }
+        
+        if violations.is_some() {
+            println!("Violations:");
+            for violation in violations.unwrap() {
+                println!("{:?}", violation);
+            }
+        }
 
-    let mut s = Solver::new(game);
-    s.solve();
-    s.display_solutions();
+        if pending.is_some() {
+            println!("Pending:");
+            for pending_rule in pending.unwrap() {
+                println!("{:?}", pending_rule);
+            }
+        }
+
+    }
+
+    // let mut s = Solver::new(game);
+    // s.solve();
+    // s.display_solutions();
 }

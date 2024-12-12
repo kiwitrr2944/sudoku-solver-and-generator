@@ -2,7 +2,7 @@ use crate::{rules::*, Position};
 use std::io;
 
 pub fn await_rule() -> (Option<Rule>, usize) {
-    println!("Enter a rule: (n) to cancel");
+    println!("Enter a rule: (n) to cancel (h) for help");
 
     let mut rule = String::new();
     io::stdin()
@@ -11,24 +11,32 @@ pub fn await_rule() -> (Option<Rule>, usize) {
     let rule = rule.trim();
     println!("You entered: {}", rule);
 
-    if rule == "n" {
-        return (None, 0);
+    match rule {
+        "n" => return (None, 0),
+        "h" => {
+            println!("Rule format examples:");
+            println!("PERMUTATION [1,1 2,2 3,3 4,4]");
+            println!("SUM [1,1 1,2] 7");
+            println!("SMALLER 1,1 1,2");
+            return (None, 1);
+        }
+        _ => {
+            if let Some(permutation_rule) = parse_permutation_rule(rule) {
+                (Some(Rule::Permutation(permutation_rule)), 2)
+            }
+            else if let Some(sum_rule) = parse_sum_rule(rule) {
+                (Some(Rule::Sum(sum_rule)), 2)
+            }
+        
+            else if let Some(relation_rule) = parse_relation_rule(rule) {
+                (Some(Rule::Relation(relation_rule)), 2)
+            }
+            else {
+                println!("Invalid rule format, try again.");
+                (None, 1)
+            }
+        }
     }
-
-    if let Some(permutation_rule) = parse_permutation_rule(rule) {
-        return (Some(Rule::Permutation(permutation_rule)), 2);
-    }
-
-    if let Some(sum_rule) = parse_sum_rule(rule) {
-        return (Some(Rule::Sum(sum_rule)), 2);
-    }
-
-    if let Some(relation_rule) = parse_relation_rule(rule) {
-        return (Some(Rule::Relation(relation_rule)), 2);
-    }
-
-    println!("Invalid rule format, try again.");
-    (None, 1)
 }
 
 fn parse_permutation_rule(input: &str) -> Option<PermutationRule> {
@@ -87,6 +95,68 @@ fn parse_positions(input: &str) -> Option<Vec<Position>> {
     }
 
     Some(positions)
+}
+
+
+pub fn await_input() -> (Option<(Position, usize)>, String) {
+    loop {
+        println!("Enter a command (move row column value, save filename, quit):");
+
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).expect("Failed to read line");
+        let input = input.trim();
+
+        let parts: Vec<&str> = input.split_whitespace().collect();
+        if parts.is_empty() {
+            println!("Invalid input. Please enter a command.");
+            continue;
+        }
+
+        match parts[0] {
+            "move" => {
+                if parts.len() != 4 {
+                    println!("Invalid input. Please enter: move row column value.");
+                    continue;
+                }
+
+                let pos = match Position::new(
+                    parts[1].parse().unwrap_or_default(),
+                    parts[2].parse().unwrap_or_default(),
+                ) {
+                    Some(pos) => pos,
+                    None => {
+                        println!("Invalid row or column. Please enter valid numbers.");
+                        continue;
+                    }
+                };
+
+                let value: usize = match parts[3].parse() {
+                    Ok(num) => num,
+                    Err(_) => {
+                        println!("Invalid value. Please enter a valid number.");
+                        continue;
+                    }
+                };
+
+                return (Some((pos, value)), String::from(""));
+            }
+            "save" => {
+                if parts.len() != 2 {
+                    println!("Invalid input. Please enter: save filename.");
+                    continue;
+                }
+
+                return (None, String::from(parts[1]));
+            }
+            "quit" => {
+                println!("Quitting the game.");
+                return (None, String::from("quit"));
+            }
+            _ => {
+                println!("Invalid command. Please enter: move, save, or quit.");
+            }
+        }
+    }
 }
 
 /*

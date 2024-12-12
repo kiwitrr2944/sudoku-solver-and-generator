@@ -1,11 +1,10 @@
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::thread::sleep;
-use std::time::Duration;
+use serde::{Deserialize, Serialize};
 
-const SIDE: usize = 6;
+const SIDE: usize = 4;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Position {
     row: usize,
     col: usize,
@@ -21,7 +20,7 @@ impl Position {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Board {
     side: usize,
     size: usize,
@@ -37,7 +36,6 @@ impl Board {
             .map(|x| Position::new((x - 1) / SIDE + 1, (x - 1) % SIDE + 1).unwrap())
             .collect();
 
-        // Shuffle the order vector
         let mut rng = thread_rng();
         order.shuffle(&mut rng);
         Board {
