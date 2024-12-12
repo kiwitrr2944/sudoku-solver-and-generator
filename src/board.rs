@@ -1,5 +1,3 @@
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 
 const SIDE: usize = 4;
@@ -12,7 +10,7 @@ pub struct Position {
 
 impl Position {
     pub fn new(row: usize, col: usize) -> Option<Self> {
-        if (1 <= row && row <= SIDE) && (1 <= col && col <= SIDE) {
+        if (1..=SIDE).contains(&row) && (1..=SIDE).contains(&col) {
             Some(Position { row, col })
         } else {
             None
@@ -26,24 +24,17 @@ pub struct Board {
     size: usize,
     filled: usize,
     board: Vec<Vec<Option<usize>>>,
-    order: Vec<Position>,
 }
 
 impl Board {
     pub fn new() -> Self {
         let size = SIDE * SIDE;
-        let mut order: Vec<Position> = (1..=size)
-            .map(|x| Position::new((x - 1) / SIDE + 1, (x - 1) % SIDE + 1).unwrap())
-            .collect();
 
-        let mut rng = thread_rng();
-        order.shuffle(&mut rng);
         Board {
             side: SIDE,
             size,
             filled: 0,
             board: vec![vec![None; SIDE]; SIDE],
-            order,
         }
     }
 
@@ -66,8 +57,8 @@ impl Board {
     pub fn set_value(&mut self, pos: Position, value: usize) {
         if self.board[pos.row - 1][pos.col - 1].is_none() {
             self.filled += 1;
+            self.board[pos.row - 1][pos.col - 1] = Some(value);
         }
-        self.board[pos.row - 1][pos.col - 1] = Some(value);
     }
 
     pub fn get_value(&self, pos: Position) -> Option<usize> {
@@ -82,12 +73,16 @@ impl Board {
         self.filled == self.size
     }
 
-    pub fn get_size(&self) -> usize {
-        self.size
-    }
-
-    pub fn get_next_position(&self) -> Position {
-        self.order[self.filled]
+    pub fn get_next_position(&self) -> Option<Position> {
+        for row in 1..=SIDE {
+            for col in 1..=SIDE {
+                let pos = Position::new(row, col).unwrap();
+                if self.get_value(pos).is_none() {
+                    return Some(pos);
+                }
+            }
+        }
+        None
     }
 
     pub fn clear_value(&mut self, pos: Position) {

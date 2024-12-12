@@ -1,37 +1,34 @@
-use crate::{rules::*, Position};
+use crate::{board::Position, rules::*};
 use std::io;
 
 pub fn await_rule() -> (Option<Rule>, usize) {
-    println!("Enter a rule: (n) to cancel (h) for help");
+    println!("Enter a rule: (p) to play (h) for help");
 
     let mut rule = String::new();
     io::stdin()
         .read_line(&mut rule)
         .expect("Failed to read line");
     let rule = rule.trim();
+
     println!("You entered: {}", rule);
 
     match rule {
-        "n" => return (None, 0),
+        "p" => (None, 0),
         "h" => {
             println!("Rule format examples:");
             println!("PERMUTATION [1,1 2,2 3,3 4,4]");
             println!("SUM [1,1 1,2] 7");
             println!("SMALLER 1,1 1,2");
-            return (None, 1);
+            (None, 1)
         }
         _ => {
             if let Some(permutation_rule) = parse_permutation_rule(rule) {
                 (Some(Rule::Permutation(permutation_rule)), 2)
-            }
-            else if let Some(sum_rule) = parse_sum_rule(rule) {
+            } else if let Some(sum_rule) = parse_sum_rule(rule) {
                 (Some(Rule::Sum(sum_rule)), 2)
-            }
-        
-            else if let Some(relation_rule) = parse_relation_rule(rule) {
+            } else if let Some(relation_rule) = parse_relation_rule(rule) {
                 (Some(Rule::Relation(relation_rule)), 2)
-            }
-            else {
+            } else {
                 println!("Invalid rule format, try again.");
                 (None, 1)
             }
@@ -97,13 +94,14 @@ fn parse_positions(input: &str) -> Option<Vec<Position>> {
     Some(positions)
 }
 
-
 pub fn await_input() -> (Option<(Position, usize)>, String) {
     loop {
-        println!("Enter a command (move row column value, save filename, quit):");
+        println!("Enter a command ((m)ove row column value, (s)ave filename, (q)uit, (f)inish with solver):");
 
         let mut input = String::new();
-        std::io::stdin().read_line(&mut input).expect("Failed to read line");
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
         let input = input.trim();
 
         let parts: Vec<&str> = input.split_whitespace().collect();
@@ -113,7 +111,7 @@ pub fn await_input() -> (Option<(Position, usize)>, String) {
         }
 
         match parts[0] {
-            "move" => {
+            "m" => {
                 if parts.len() != 4 {
                     println!("Invalid input. Please enter: move row column value.");
                     continue;
@@ -140,7 +138,7 @@ pub fn await_input() -> (Option<(Position, usize)>, String) {
 
                 return (Some((pos, value)), String::from(""));
             }
-            "save" => {
+            "s" => {
                 if parts.len() != 2 {
                     println!("Invalid input. Please enter: save filename.");
                     continue;
@@ -148,7 +146,10 @@ pub fn await_input() -> (Option<(Position, usize)>, String) {
 
                 return (None, String::from(parts[1]));
             }
-            "quit" => {
+            "f" => {
+                return (None, String::from("finish"));
+            }
+            "q" => {
                 println!("Quitting the game.");
                 return (None, String::from("quit"));
             }
@@ -158,47 +159,3 @@ pub fn await_input() -> (Option<(Position, usize)>, String) {
         }
     }
 }
-
-/*
-fn input_and_set_value() -> bool {
-    println!("Enter row, column, and value (e.g., 1 1 1) or 'q' to quit:");
-
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
-
-    if input.trim() == "q" {
-        return false;
-    }
-
-    let parts: Vec<&str> = input.split_whitespace().collect();
-    if parts.len() != 3 {
-        println!("Invalid input. Please enter row, column, and value.");
-        return true;
-    }
-
-    let pos = match Position::new(
-        parts[0].parse().unwrap_or_default(),
-        parts[1].parse().unwrap_or_default(),
-    ) {
-        Some(pos) => pos,
-        None => {
-            println!("Invalid row or column. Please enter valid numbers.");
-            return true;
-        }
-    };
-
-    let value: usize = match parts[2].parse() {
-        Ok(num) => num,
-        Err(_) => {
-            println!("Invalid value. Please enter a valid number.");
-            return true;
-        }
-    };
-
-    self.board.set_value(pos, value);
-    true
-}
-
-*/

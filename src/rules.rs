@@ -1,8 +1,7 @@
 use crate::board::{Board, Position};
 use serde::{Deserialize, Serialize};
 
-
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub enum Rule {
     Sum(SumRule),
     Permutation(PermutationRule),
@@ -16,7 +15,7 @@ pub enum RuleCheckResult {
     Ok,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct SumRule {
     pub positions: Vec<Position>,
     pub sum: usize,
@@ -44,7 +43,7 @@ impl SumRule {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct PermutationRule {
     pub positions: Vec<Position>,
 }
@@ -78,7 +77,7 @@ impl PermutationRule {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RelationRule {
     pub position1: Position,
     pub position2: Position,

@@ -1,6 +1,6 @@
 use crate::board::Board;
+use crate::game::Game;
 use crate::rules::{Rule, RuleCheckResult};
-use crate::Game;
 
 pub struct Solver {
     board: Board,
@@ -11,9 +11,9 @@ pub struct Solver {
 impl Solver {
     pub fn new(game: Game) -> Self {
         Solver {
-            board: game.board,
+            board: game.board(),
             solutions: Vec::new(),
-            rules: game.rules,
+            rules: game.rules(),
         }
     }
 
@@ -52,7 +52,6 @@ impl Solver {
         if self.board.is_filled() {
             if state == 2 {
                 self.solutions.push(self.board.clone());
-                self.board.display();
             }
             return;
         }
@@ -61,7 +60,8 @@ impl Solver {
             return;
         }
 
-        let pos = self.board.get_next_position();
+        let pos = self.board.get_next_position().unwrap();
+        dbg!("solve", pos);
         for value in 1..=self.board.get_side() {
             self.board.set_value(pos, value);
             self.solve_recursive();
@@ -70,6 +70,10 @@ impl Solver {
     }
 
     pub fn display_solutions(self) {
+        if self.solutions.is_empty() {
+            println!("No solutions found");
+            return;
+        }
         for (i, solution) in self.solutions.iter().enumerate() {
             println!("Solution {}", i + 1);
             solution.display();
