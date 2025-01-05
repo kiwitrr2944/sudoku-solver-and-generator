@@ -1,4 +1,22 @@
-struct App {
+use super::field::{Field, FieldMsg, FieldOutput};
+use gtk::glib::Propagation;
+use gtk::prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt, *};
+use crate::logic::game;
+use relm4::factory::FactoryVecDeque;
+use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
+
+const N: usize = 4;
+const R: usize = 2;
+const C: usize = 2;
+const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
+
+macro_rules! choose_color {
+    ($color_index:expr) => {
+        &[&COLOR_LIST[$color_index]]
+    };
+}
+
+pub struct App {
     fields: FactoryVecDeque<Field>,
     global_value: usize,
     game: game::Game,
@@ -6,14 +24,14 @@ struct App {
 }
 
 #[derive(Debug)]
-enum AppMsg {
+pub enum AppMsg {
     RequestValue(usize),
     ChangeValue(usize),
     Solve,
     Finished,
 }
 
-#[relm4::component]
+#[relm4::component(pub)]
 impl SimpleComponent for App {
     type Init = usize;
     type Input = AppMsg;
@@ -82,7 +100,7 @@ impl SimpleComponent for App {
         let mut model = App {
             fields,
             global_value: 0,
-            game: logic::game::Game::new(N, R, C),
+            game: crate::logic::game::Game::new(N, R, C),
             finished: 0,
         };
 
@@ -107,10 +125,11 @@ impl SimpleComponent for App {
 
         match msg {
             AppMsg::RequestValue(index) => {
-                self.game.set_value(logic::board::Position::new(1 + index%N, 1 + index/N), self.global_value);
+                self.game.set_value(crate::logic::board::Position::new(1 + index%N, 1 + index/N), self.global_value);
                 let state = self.game.check_rules();
                 match state {
                     (None, None) => {
+                        self.finished = 3;
                         sender.input(AppMsg::Finished);
                     }
                     _ => {}
@@ -121,7 +140,7 @@ impl SimpleComponent for App {
                 self.global_value = value;
             },
             AppMsg::Solve => {
-                let mut S = logic::solver::Solver::new(self.game.clone());
+                let mut S = crate::logic::solver::Solver::new(self.game.clone());
                 S.solve();
                 S.display_solutions();
                 let solution = S.get_solution();
@@ -129,7 +148,7 @@ impl SimpleComponent for App {
                     for i in 0..N {
                         for j in 0..N {
                             let index = i * N + j;
-                            let pos = logic::board::Position::new(1 + j, 1 + i);
+                            let pos = crate::logic::board::Position::new(1 + j, 1 + i);
                             let sval = solution.get_value(pos).unwrap();
                             let curval = self.game.get_value(pos);
                             if curval == None {

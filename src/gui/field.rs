@@ -1,7 +1,13 @@
+use gtk::prelude::{BoxExt, ButtonExt, OrientableExt, WidgetExt};
+use relm4::factory::positions::GridPosition;
+use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
+use relm4::RelmWidgetExt;
+
+
+
 const N: usize = 4;
 const R: usize = 2;
 const C: usize = 2;
-
 const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
 
 macro_rules! choose_color {
@@ -11,25 +17,25 @@ macro_rules! choose_color {
 }
 
 #[derive(Debug)]
-struct Field {
-    value: usize,
-    display_value: String,
-    color: usize,
-    index: usize,
+pub struct Field {
+    pub value: usize,
+    pub display_value: String,
+    pub color: usize,
+    pub index: usize,
 }
 
 #[derive(Debug)]
-enum FieldMsg {
+pub enum FieldMsg {
     ChangeValue,
     SetValue(usize),
 }
 
 #[derive(Debug)]
-enum FieldOutput {
+pub enum FieldOutput {
     RequestValue(usize),
 }
 
-struct FieldWidgets {
+pub struct FieldWidgets {
     label: gtk::Button,
 }
 
