@@ -1,6 +1,6 @@
-use crate::board::Board;
-use crate::game::Game;
-use crate::rules::{Rule, RuleCheckResult};
+use super::board::Board;
+use super::game::Game;
+use super::rules::{Rule, RuleCheckResult};
 
 pub struct Solver {
     board: Board,
@@ -44,6 +44,7 @@ impl Solver {
     }
 
     pub fn solve(&mut self) {
+        dbg!("solve");
         self.solve_recursive();
     }
 
@@ -69,7 +70,11 @@ impl Solver {
         }
     }
 
-    pub fn display_solutions(self) {
+    pub fn get_solution(&self) -> Option<&Board> {
+        self.solutions.first()
+    }
+
+    pub fn display_solutions(&self) {
         if self.solutions.is_empty() {
             println!("No solutions found");
             return;

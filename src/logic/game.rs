@@ -1,10 +1,10 @@
-use crate::board::{Board, Position};
-use crate::rules::{self, PermutationRule, Rule};
+use super::board::{Board, Position};
+use super::rules::{self, PermutationRule, Rule};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Game {
     board: Board,
     rules: Vec<Rule>,
@@ -76,15 +76,10 @@ impl Game {
             }
         }
 
-        if violations.is_empty() && pending.is_empty() {
-            (None, None)
-        } else if pending.is_empty() {
-            (Some(violations), None)
-        } else if violations.is_empty() {
-            (None, Some(pending))
-        } else {
-            (Some(violations), Some(pending))
-        }
+        (
+            if violations.is_empty() { None } else { Some(violations) },
+            if pending.is_empty() { None } else { Some(pending) },
+        )
     }
 
     pub fn save_to_file(&self, filename: &str) {
@@ -112,7 +107,14 @@ impl Game {
         self.rules.clone()
     }
 
-    pub fn set_value(&mut self, pos: Position, value: usize) {
-        self.board.set_value(pos, value);
+    pub fn set_value(&mut self, pos: Option<Position>, value: usize) {
+        dbg!("set_value", pos, value);
+        match pos {
+            Some(pos) => self.board.set_value(pos, value),
+            None => {}
+        }
+    }
+    pub fn get_value(&self, pos: Option<Position>) -> Option<usize> {
+        self.board.get_value(pos)
     }
 }

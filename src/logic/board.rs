@@ -61,8 +61,11 @@ impl Board {
         }
     }
 
-    pub fn get_value(&self, pos: Position) -> Option<usize> {
-        self.board[pos.row - 1][pos.col - 1]
+    pub fn get_value(&self, pos: Option<Position>) -> Option<usize> {
+        match pos {
+            Some(pos) => self.board[pos.row - 1][pos.col - 1],
+            None => None,
+        }
     }
 
     pub fn get_side(&self) -> usize {
@@ -76,9 +79,9 @@ impl Board {
     pub fn get_next_position(&self) -> Option<Position> {
         for row in 1..=SIDE {
             for col in 1..=SIDE {
-                let pos = Position::new(row, col).unwrap();
+                let pos = Position::new(row, col);
                 if self.get_value(pos).is_none() {
-                    return Some(pos);
+                    return pos;
                 }
             }
         }

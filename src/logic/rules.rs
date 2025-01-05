@@ -1,4 +1,4 @@
-use crate::board::{Board, Position};
+use super::board::{Board, Position};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -26,7 +26,7 @@ impl SumRule {
         let current_sum: usize = self
             .positions
             .iter()
-            .map(|&pos| board.get_value(pos).unwrap_or_default())
+            .map(|&pos| board.get_value(Some(pos)).unwrap_or_default())
             .sum();
 
         match current_sum.cmp(&self.sum) {
@@ -53,7 +53,7 @@ impl PermutationRule {
         let mut values: Vec<usize> = self
             .positions
             .iter()
-            .filter_map(|&pos| board.get_value(pos))
+            .filter_map(|&pos| board.get_value(Some(pos)))
             .collect();
 
         values.sort();
@@ -61,7 +61,7 @@ impl PermutationRule {
         let mut unique_values = values.clone();
         unique_values.dedup();
 
-        if unique_values.len() != values.len() {
+        if unique_values.len() != values.len() || unique_values.first() != Some(&1) || unique_values.last() != Some(&board.get_side()) {
             RuleCheckResult::Critical(format!(
                 "RULE (permutation): positions {:?} should be a permutation",
                 self.positions
@@ -85,8 +85,8 @@ pub struct RelationRule {
 
 impl RelationRule {
     pub fn check(&self, board: &Board) -> RuleCheckResult {
-        let value1 = board.get_value(self.position1);
-        let value2 = board.get_value(self.position2);
+        let value1 = board.get_value(Some(self.position1));
+        let value2 = board.get_value(Some(self.position2));
         if value1.is_none() || value2.is_none() {
             RuleCheckResult::Unfulfilled(format!(
                 "RULE (relation): position {:?} or {:?} not filled",
