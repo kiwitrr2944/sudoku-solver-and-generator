@@ -8,6 +8,7 @@ use std::path::Path;
 pub struct Game {
     board: Board,
     rules: Vec<Rule>,
+    base_rule_count: usize,
 }
 
 impl Game {
@@ -15,6 +16,7 @@ impl Game {
         let mut game = Game {
             board: Board::new(),
             rules: Vec::new(),
+            base_rule_count: 0,
         };
 
         for row in 0..side {
@@ -22,6 +24,7 @@ impl Game {
                 .filter_map(|col| Position::new(row + 1, col + 1))
                 .collect();
             game.add_rule(Rule::Permutation(PermutationRule { positions }));
+            game.base_rule_count += 1;
         }
 
         for col in 0..side {
@@ -29,6 +32,7 @@ impl Game {
                 .filter_map(|row| Position::new(row + 1, col + 1))
                 .collect();
             game.add_rule(Rule::Permutation(PermutationRule { positions }));
+            game.base_rule_count += 1;
         }
 
         for sub_row in 0..(side / sub_rows) {
@@ -44,6 +48,7 @@ impl Game {
                     }
                 }
                 game.add_rule(Rule::Permutation(PermutationRule { positions }));
+                game.base_rule_count += 1;
             }
         }
 
@@ -52,6 +57,14 @@ impl Game {
 
     pub fn add_rule(&mut self, rule: Rule) {
         self.rules.push(rule);
+    }
+
+    pub fn add_position_to_rule(&mut self, index: usize, pos: Position) {
+        self.rules[index + self.base_rule_count].add_position(pos);
+    }
+
+    pub fn get_rule(&self, index: usize) -> Rule {
+        self.rules[index + self.base_rule_count].clone()
     }
 
     pub fn check_rules(&self) -> (Option<Vec<String>>, Option<Vec<String>>) {

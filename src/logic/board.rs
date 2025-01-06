@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-const SIDE: usize = 6;
+const SIDE: usize = 4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Position {
@@ -16,17 +16,13 @@ impl Position {
             None
         }
     }
-    
-    pub fn next(&self) -> Option<Self>{
-        if self.col == SIDE {
-            if self.row == SIDE {
-                None
-            } else {
-                Position::new(self.row + 1, 1)
-            }
-        } else {
-            Position::new(self.row, self.col + 1)
-        }
+
+    pub fn index(&self) -> usize {
+        (self.row - 1) * SIDE + self.col - 1
+    }
+
+    pub fn get_sub_id(&self, r: usize, c: usize) -> usize {
+        (self.row - 1) / r + (self.col - 1) / c
     }
 }
 

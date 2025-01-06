@@ -15,6 +15,33 @@ pub enum RuleCheckResult {
     Ok,
 }
 
+impl Rule {
+    pub fn check(&self, board: &Board) -> RuleCheckResult {
+        match self {
+            Rule::Sum(r) => r.check(board),
+            Rule::Permutation(r) => r.check(board),
+            Rule::Relation(r) => r.check(board),
+        }
+    }
+
+    pub fn get_positions(&self) -> Vec<Position> {
+        match self {
+            Rule::Sum(r) => r.positions.clone(),
+            Rule::Permutation(r) => r.positions.clone(),
+            Rule::Relation(r) => vec![r.position1, r.position2],
+        }
+    }
+
+    pub fn add_position(&mut self, pos: Position) {
+        match self {
+            Rule::Sum(r) => r.positions.push(pos),
+            Rule::Permutation(r) => r.positions.push(pos),
+            Rule::Relation(_r) => {}
+        }
+    }
+}
+
+
 #[derive(Deserialize, Serialize, Clone)]
 pub struct SumRule {
     pub positions: Vec<Position>,

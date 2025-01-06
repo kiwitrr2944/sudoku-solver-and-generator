@@ -3,9 +3,9 @@ use relm4::factory::positions::GridPosition;
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
 use relm4::RelmWidgetExt;
 
-const N: usize = 6;
+const N: usize = 4;
 const R: usize = 2;
-const C: usize = 3;
+const C: usize = 2;
 const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
 
 macro_rules! choose_color {
@@ -24,13 +24,14 @@ pub struct Field {
 
 #[derive(Debug)]
 pub enum FieldMsg {
+    ChangeColor(usize),
     ChangeValue,
     SetValue(usize),
 }
 
 #[derive(Debug)]
 pub enum FieldOutput {
-    RequestValue(usize),
+    FieldClicked(usize),
 }
 
 pub struct FieldWidgets {
@@ -104,7 +105,7 @@ impl FactoryComponent for Field {
     fn update(&mut self, msg: Self::Input, sender: FactorySender<Self>) {
         match msg {
             FieldMsg::ChangeValue => {
-                sender.output(FieldOutput::RequestValue(self.index)).unwrap();
+                sender.output(FieldOutput::FieldClicked(self.index)).unwrap();
             }
             FieldMsg::SetValue(value) => {
                 self.value = value;
@@ -113,6 +114,9 @@ impl FactoryComponent for Field {
                     0 => String::from("_"),
                     _ => value.to_string(),
                 };
+            },
+            FieldMsg::ChangeColor(color) => {
+                self.color = color;
             }
         }
     }

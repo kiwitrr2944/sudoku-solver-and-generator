@@ -1,13 +1,15 @@
-use super::field::{Field, FieldMsg, FieldOutput};
+use super::field_button::{Field, FieldMsg, FieldOutput};
+use super::rule_button::{RuleButton, RuleOutput};
 use gtk::glib::Propagation;
 use gtk::prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt, *};
 use crate::logic::game;
+use crate::logic::rules::{PermutationRule, Rule};
 use relm4::factory::FactoryVecDeque;
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
 
-const N: usize = 6;
+const N: usize = 4;
 const R: usize = 2;
-const C: usize = 3;
+const C: usize = 2;
 const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
 
 macro_rules! choose_color {
@@ -16,19 +18,42 @@ macro_rules! choose_color {
     };
 }
 
+
+
+fn popup(text: &str) {
+    let dialog = gtk::MessageDialog::new(
+        None::<&gtk::Window>,
+        gtk::DialogFlags::MODAL,
+        gtk::MessageType::Info,
+        gtk::ButtonsType::Ok,
+        text,
+    );
+    dialog.connect_response(|dialog, _| {
+        dialog.close();
+    });
+    dialog.show();
+}
+
 pub struct App {
     fields: FactoryVecDeque<Field>,
+    rules: FactoryVecDeque<RuleButton>,
     global_value: usize,
+    rule_active: usize,
     game: game::Game,
     finished: usize,
+    planning: bool,
 }
 
 #[derive(Debug)]
 pub enum AppMsg {
-    RequestValue(usize),
+    FieldClicked(usize),
     ChangeValue(usize),
     Solve,
+    AddRule,
+    RuleActive(usize),
     Finished,
+    TogglePlanning,
+    Help,
 }
 
 #[relm4::component(pub)]
@@ -40,18 +65,41 @@ impl SimpleComponent for App {
     view! {
         gtk::Window {
             set_title: Some("SUDOKU GAME by kiwitrr2944"),
-            set_default_size: (300, 100),
+            set_default_size: (500, 500),
 
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_spacing: 50,
                 set_margin_all: 50,
+                set_css_classes: choose_color!(0),
                 
                 #[name(value_label)]
                 gtk::Label {
                     #[watch]
                     set_label: &format!("Current setting value: {}", model.global_value),
-                    set_css_classes: choose_color!(0),
+                },
+
+                #[name(custom_rules)]
+                gtk::Box {
+                    #[watch]
+                    set_orientation: gtk::Orientation::Horizontal,
+
+                    gtk::Label {
+                        set_label: "Custom rules",
+                    },
+
+                    gtk::Button {
+                        set_visible: model.planning,
+                        set_label: "Add",
+                        connect_clicked => AppMsg::AddRule,
+                    },
+
+                    #[local_ref]
+                    rule_grid -> gtk::Grid {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_column_spacing: 15,
+                        set_row_spacing: 5,
+                    }
                 },
                 
                 #[local_ref]
@@ -66,17 +114,14 @@ impl SimpleComponent for App {
 
             add_controller = gtk::EventControllerKey::new() {
                 connect_key_pressed[sender] => move |_, keyval, _, _| {
-                    let keyval = keyval.to_unicode().unwrap_or_default().to_digit(36);
-                    dbg!(keyval);
-                    match keyval {
-                        Some(keyval) => {
-                            match keyval as usize {
-                                0..=N => sender.input(AppMsg::ChangeValue(keyval as usize)),
-                                15 => {sender.input(AppMsg::Solve);},
-                                _ => {}
-                            }
-                        },
-                        None => {}
+                    if let Some(keyval) = keyval.to_unicode().and_then(|c| c.to_digit(36)) {
+                        match keyval as usize {
+                            0..=N => sender.input(AppMsg::ChangeValue(keyval as usize)),
+                            15 => sender.input(AppMsg::Solve),
+                            17 => sender.input(AppMsg::Help),
+                            27 => sender.input(AppMsg::TogglePlanning),
+                            _ => {}
+                        }
                     }
                     Propagation::Proceed
                 },
@@ -93,22 +138,31 @@ impl SimpleComponent for App {
             FactoryVecDeque::builder()
                 .launch_default()
                 .forward(sender.input_sender(), |msg| match msg {
-                    FieldOutput::RequestValue(index) => AppMsg::RequestValue(index),
+                    FieldOutput::FieldClicked(index) => AppMsg::FieldClicked(index),
                 });
+
+        let rules = FactoryVecDeque::builder()
+            .launch_default()
+            .forward(sender.input_sender(), |msg| match msg {
+                RuleOutput::RuleClicked(index) => AppMsg::RuleActive(index),
+            });
 
                 
         let mut model = App {
             fields,
+            rules,
             global_value: 0,
+            rule_active: 0,
             game: crate::logic::game::Game::new(N, R, C),
             finished: 0,
+            planning: true,
         };
 
+
         let field_grid = model.fields.widget();
+        let rule_grid = model.rules.widget();
         let widgets = view_output!();
 
-        // Initialize the grid with n x n fields
-        // You can change this value to the desired grid size
         for i in 0..N {
             for j in 0..N {
                 let color = (i / C + j / R) % 2;
@@ -122,23 +176,41 @@ impl SimpleComponent for App {
 
     fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>) {
         let fields_guard = self.fields.guard();
+        let mut rules_guard = self.rules.guard();
 
         match msg {
-            AppMsg::RequestValue(index) => {
-                self.game.set_value(crate::logic::board::Position::new(1 + index%N, 1 + index/N), self.global_value);
-                let state = self.game.check_rules();
-                match state {
-                    (None, None) => {
-                        self.finished = 3;
-                        sender.input(AppMsg::Finished);
+            AppMsg::FieldClicked(index) => {
+                dbg!("Field clicked", index, self.planning);
+                if self.planning {
+                    let pos = crate::logic::board::Position::new(1 + index%N, 1 + index/N).unwrap();
+                    let rule: Rule = self.game.get_rule(self.rule_active);
+                    
+                    if rule.get_positions().contains(&pos) {
+                        dbg!("Remove position", pos);
                     }
-                    _ => {}
+                    else {
+                        self.game.add_position_to_rule(self.rule_active, pos);
+                        fields_guard.send(index, FieldMsg::ChangeColor(self.rule_active));
+                        dbg!("Add position", pos);
+                    }
                 }
-                fields_guard.send(index, FieldMsg::SetValue(self.global_value));
+                else {
+                    self.game.set_value(crate::logic::board::Position::new(1 + index%N, 1 + index/N), self.global_value);
+                    let state = self.game.check_rules();
+                    match state {
+                        (None, None) => {
+                            self.finished = 3;
+                            sender.input(AppMsg::Finished);
+                        }
+                        _ => {}
+                    }
+                    fields_guard.send(index, FieldMsg::SetValue(self.global_value));
+                }
             },
             AppMsg::ChangeValue(value) => {
                 self.global_value = value;
             },
+            
             AppMsg::Solve => {
                 let mut sol = crate::logic::solver::Solver::new(self.game.clone());
                 sol.board.display();
@@ -165,9 +237,56 @@ impl SimpleComponent for App {
                 }
                 sender.input(AppMsg::Finished);
             },
+
             AppMsg::Finished => {
                 dbg!("Finished");
             },
+            
+            AppMsg::TogglePlanning => {
+                self.planning = !self.planning;
+            },
+
+            AppMsg::AddRule => {
+                dbg!("Add rule");
+                let index = rules_guard.len();
+                if index > 9 {
+                    popup("Maximum number of rules reached");
+                    return;
+                }
+                rules_guard.push_back((String::from("RULE"), index));
+                self.game.add_rule(Rule::Permutation(PermutationRule { positions: Vec::new() }));
+            },
+
+            AppMsg::RuleActive(index) => {
+                dbg!("Rule active", self.planning, self.rule_active, index, self.game.get_rule(index).get_positions());
+                let rule = self.game.get_rule(self.rule_active);
+                for pos in rule.get_positions() {
+                    let index = pos.index();
+                    let color = pos.get_sub_id(R, C)%2;
+                    dbg!("Change color", index, color);
+                    fields_guard.send(index, FieldMsg::ChangeColor(color));
+                }
+                
+                self.rule_active = index;
+            
+                let rule = self.game.get_rule(self.rule_active);
+                for pos in rule.get_positions() {
+                    let index = pos.index();    
+                    fields_guard.send(index, FieldMsg::ChangeColor(self.rule_active));
+                }
+            },
+
+            AppMsg::Help => {
+                popup("Help:\n\
+                press 0-N to choose current setting value,\n\
+                you can move with arrows to select field and press Enter to set value,\n\
+                clicking on field will also set current setting value,\n\
+                's' to save game,\n\
+                'l' to load game from file,\n\
+                'f' to finish game using solver,\n\
+                'r' to toggle planning mode,\n\
+                ");
+            }
         }
     }
 }
