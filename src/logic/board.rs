@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-const SIDE: usize = 4;
+const SIDE: usize = 6;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Position {
@@ -14,6 +14,18 @@ impl Position {
             Some(Position { row, col })
         } else {
             None
+        }
+    }
+    
+    pub fn next(&self) -> Option<Self>{
+        if self.col == SIDE {
+            if self.row == SIDE {
+                None
+            } else {
+                Position::new(self.row + 1, 1)
+            }
+        } else {
+            Position::new(self.row, self.col + 1)
         }
     }
 }
@@ -55,10 +67,7 @@ impl Board {
     }
 
     pub fn set_value(&mut self, pos: Position, value: usize) {
-        if self.board[pos.row - 1][pos.col - 1].is_none() {
-            self.filled += 1;
-            self.board[pos.row - 1][pos.col - 1] = Some(value);
-        }
+        self.board[pos.row - 1][pos.col - 1] = Some(value);
     }
 
     pub fn get_value(&self, pos: Option<Position>) -> Option<usize> {
@@ -70,10 +79,6 @@ impl Board {
 
     pub fn get_side(&self) -> usize {
         self.side
-    }
-
-    pub fn is_filled(&self) -> bool {
-        self.filled == self.size
     }
 
     pub fn get_next_position(&self) -> Option<Position> {
@@ -89,9 +94,6 @@ impl Board {
     }
 
     pub fn clear_value(&mut self, pos: Position) {
-        if self.board[pos.row - 1][pos.col - 1].is_some() {
-            self.filled -= 1;
-        }
         self.board[pos.row - 1][pos.col - 1] = None;
     }
 }

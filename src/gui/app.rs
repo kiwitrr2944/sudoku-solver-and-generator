@@ -5,9 +5,9 @@ use crate::logic::game;
 use relm4::factory::FactoryVecDeque;
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
 
-const N: usize = 4;
+const N: usize = 6;
 const R: usize = 2;
-const C: usize = 2;
+const C: usize = 3;
 const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
 
 macro_rules! choose_color {
@@ -140,10 +140,11 @@ impl SimpleComponent for App {
                 self.global_value = value;
             },
             AppMsg::Solve => {
-                let mut S = crate::logic::solver::Solver::new(self.game.clone());
-                S.solve();
-                S.display_solutions();
-                let solution = S.get_solution();
+                let mut sol = crate::logic::solver::Solver::new(self.game.clone());
+                sol.board.display();
+                sol.solve();
+                let solution = sol.get_solution();
+
                 if let Some(solution) = solution {
                     for i in 0..N {
                         for j in 0..N {

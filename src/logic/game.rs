@@ -108,7 +108,7 @@ impl Game {
     }
 
     pub fn set_value(&mut self, pos: Option<Position>, value: usize) {
-        dbg!("set_value", pos, value);
+        self.board.display();
         match pos {
             Some(pos) => self.board.set_value(pos, value),
             None => {}

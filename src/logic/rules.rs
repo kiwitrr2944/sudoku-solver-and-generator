@@ -56,19 +56,21 @@ impl PermutationRule {
             .filter_map(|&pos| board.get_value(Some(pos)))
             .collect();
 
-        values.sort();
 
+        if values.len() < board.get_side() {
+            return RuleCheckResult::Unfulfilled(format!(
+                "RULE (permutation): positions {:?} should be a permutation, (elements are missing)",
+                self.positions
+            ));
+        }
+
+        values.sort();
         let mut unique_values = values.clone();
         unique_values.dedup();
 
         if unique_values.len() != values.len() || unique_values.first() != Some(&1) || unique_values.last() != Some(&board.get_side()) {
             RuleCheckResult::Critical(format!(
                 "RULE (permutation): positions {:?} should be a permutation",
-                self.positions
-            ))
-        } else if unique_values.len() < board.get_side() {
-            RuleCheckResult::Unfulfilled(format!(
-                "RULE (permutation): positions {:?} should be a permutation, (elements are missing)",
                 self.positions
             ))
         } else {

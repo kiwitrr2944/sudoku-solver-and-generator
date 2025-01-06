@@ -1,19 +1,21 @@
-use super::board::Board;
+use super::board::{Board, Position};
 use super::game::Game;
 use super::rules::{Rule, RuleCheckResult};
 
 pub struct Solver {
-    board: Board,
-    solutions: Vec<Board>,
+    pub board: Board,
+    solution: Option<Board>,
     rules: Vec<Rule>,
+    current_pos: Option<Position>,
 }
 
 impl Solver {
     pub fn new(game: Game) -> Self {
         Solver {
             board: game.board(),
-            solutions: Vec::new(),
+            solution: None,
             rules: game.rules(),
+            current_pos: Position::new(1, 1),
         }
     }
 
@@ -48,40 +50,57 @@ impl Solver {
         self.solve_recursive();
     }
 
-    pub fn solve_recursive(&mut self) {
+    pub fn solve_recursive(&mut self) -> bool {
         let state = self.check_rules();
-        if self.board.is_filled() {
-            if state == 2 {
-                self.solutions.push(self.board.clone());
-            }
-            return;
-        }
-
         if state == 0 {
-            return;
+            return false;
         }
-
-        let pos = self.board.get_next_position().unwrap();
-        dbg!("solve", pos);
+        
+        loop {
+            match self.current_pos {
+                Some(pos) => {
+                    if (self.board.get_value(Some(pos))).is_some() {
+                        self.current_pos = pos.next();
+                    }
+                    else {
+                        break;
+                    }
+                }
+                None => {
+                    if state == 2 {
+                        self.solution = Some(self.board.clone());
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        let pos = self.current_pos.unwrap();
+        
         for value in 1..=self.board.get_side() {
             self.board.set_value(pos, value);
-            self.solve_recursive();
+
+            if self.solve_recursive() {
+                return true;
+            }
+
             self.board.clear_value(pos);
         }
+        false
     }
 
-    pub fn get_solution(&self) -> Option<&Board> {
-        self.solutions.first()
+    pub fn get_solution(&self) -> Option<Board> {
+        self.solution.clone()
     }
 
-    pub fn display_solutions(&self) {
-        if self.solutions.is_empty() {
-            println!("No solutions found");
-            return;
-        }
-        for (i, solution) in self.solutions.iter().enumerate() {
-            println!("Solution {}", i + 1);
-            solution.display();
-        }
-    }
+    // pub fn display_solutions(&self) {
+    //     if self.solutions.is_empty() {
+    //         println!("No solutions found");
+    //         return;
+    //     }
+    //     for (i, solution) in self.solutions.iter().enumerate() {
+    //         println!("Solution {}", i + 1);
+    //         solution.display();
+    //     }
+    // }
 }

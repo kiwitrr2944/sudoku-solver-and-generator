@@ -3,11 +3,9 @@ use relm4::factory::positions::GridPosition;
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
 use relm4::RelmWidgetExt;
 
-
-
-const N: usize = 4;
+const N: usize = 6;
 const R: usize = 2;
-const C: usize = 2;
+const C: usize = 3;
 const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
 
 macro_rules! choose_color {
@@ -110,6 +108,7 @@ impl FactoryComponent for Field {
             }
             FieldMsg::SetValue(value) => {
                 self.value = value;
+                dbg!(self.value, self.index, "set");
                 self.display_value = match value {
                     0 => String::from("_"),
                     _ => value.to_string(),
