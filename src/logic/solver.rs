@@ -169,7 +169,7 @@ impl Solver {
             for col in 1..=self.n {
                 if self.board.get_value(Position::new(row, col)) == 0 {
                     let options = &self.options[row - 1][col - 1];
-                    if ret.1.is_none() || options.len() < ret.0.len() {
+                    if (options.len() > 0) && (ret.1.is_none() || options.len() < ret.0.len()) {
                         ret = (options.clone(), Position::new(row, col));
                     }
                 }
