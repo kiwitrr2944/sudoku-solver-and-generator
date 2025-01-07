@@ -3,7 +3,7 @@ use relm4::factory::positions::GridPosition;
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
 use relm4::RelmWidgetExt;
 
-const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
+const COLOR_LIST : [&str; 8] = ["red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
 
 macro_rules! choose_color {
     ($color_index:expr) => {
@@ -85,7 +85,7 @@ impl FactoryComponent for RuleButton {
                 gtk::Button {
                     set_css_classes: choose_color!(self.color),
                     set_label: &self.display_value,
-                    set_size_request: (100, 50), // Set the size of the button
+                    set_size_request: (100, 50),
                     connect_clicked => RuleMsg::Clicked,
                     set_margin_all: 5,
                 }

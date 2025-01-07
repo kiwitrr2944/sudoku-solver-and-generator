@@ -14,44 +14,48 @@ pub struct Game {
 impl Game {
     pub fn new(side: usize, sub_rows: usize, sub_cols: usize) -> Self {
         let mut game = Game {
-            board: Board::new(),
+            board: Board::new(side),
             rules: Vec::new(),
             base_rule_count: 0,
         };
 
-        for row in 0..side {
-            let positions: Vec<Position> = (0..side)
-                .filter_map(|col| Position::new(row + 1, col + 1))
+        let mut rc = 0;
+        for row in 1..=side {
+            let positions: Vec<Position> = (1..=side)
+                .filter_map(|col| Position::new(row, col))
                 .collect();
-            game.add_rule(Rule::Permutation(PermutationRule { positions }));
-            game.base_rule_count += 1;
+            game.add_rule(Rule::Permutation(PermutationRule::new(positions, rc)));
+            rc += 1;
         }
-
-        for col in 0..side {
-            let positions: Vec<Position> = (0..side)
-                .filter_map(|row| Position::new(row + 1, col + 1))
-                .collect();
-            game.add_rule(Rule::Permutation(PermutationRule { positions }));
-            game.base_rule_count += 1;
+        
+        for col in 1..=side {
+            let positions: Vec<Position> = (1..=side)
+            .filter_map(|row| Position::new(row, col))
+            .collect();
+            game.add_rule(Rule::Permutation(PermutationRule::new(positions, rc)));
+            rc += 1;
         }
-
-        for sub_row in 0..(side / sub_rows) {
-            for sub_col in 0..(side / sub_cols) {
+    
+        for sub_row in 0..side/sub_rows {
+            for sub_col in 0..side/sub_cols {
+                dbg!(sub_row, sub_col, "----------");
                 let mut positions = Vec::new();
-                for row in 0..sub_rows {
-                    for col in 0..sub_cols {
-                        let pos_row = sub_row * sub_rows + row + 1;
-                        let pos_col = sub_col * sub_cols + col + 1;
+                for row in 1..=sub_rows {
+                    for col in 1..=sub_cols {
+                        let pos_row = sub_row * sub_rows + row;
+                        let pos_col = sub_col * sub_cols + col;
                         if let Some(pos) = Position::new(pos_row, pos_col) {
                             positions.push(pos);
                         }
                     }
                 }
-                game.add_rule(Rule::Permutation(PermutationRule { positions }));
-                game.base_rule_count += 1;
+                game.add_rule(Rule::Permutation(PermutationRule::new(positions, rc)));
+                rc += 1;
             }
         }
-
+        
+        dbg!(&game.rules);
+        game.base_rule_count = rc;
         game
     }
 
@@ -109,7 +113,7 @@ impl Game {
     }
 
     pub fn display(&self) {
-        self.board.display();
+        print!("{}", self.board()); 
     }
 
     pub fn board(&self) -> Board {
@@ -121,13 +125,25 @@ impl Game {
     }
 
     pub fn set_value(&mut self, pos: Option<Position>, value: usize) {
-        self.board.display();
+        print!("{}", self.board());
         match pos {
             Some(pos) => self.board.set_value(pos, value),
             None => {}
         }
     }
-    pub fn get_value(&self, pos: Option<Position>) -> Option<usize> {
+    pub fn get_value(&self, pos: Option<Position>) -> usize {
         self.board.get_value(pos)
+    }
+
+    pub fn get_side(&self) -> usize {
+        self.board.get_side()
+    }
+
+    pub fn get_base_rule_count(&self) -> usize {
+        self.base_rule_count
+    }
+
+    pub fn set_board(&mut self, board: Board) {
+        self.board = board;
     }
 }

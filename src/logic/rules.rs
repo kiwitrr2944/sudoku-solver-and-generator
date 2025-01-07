@@ -1,7 +1,7 @@
 use super::board::{Board, Position};
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Rule {
     Sum(SumRule),
     Permutation(PermutationRule),
@@ -39,21 +39,33 @@ impl Rule {
             Rule::Relation(_r) => {}
         }
     }
+
+    pub fn get_index(&self) -> usize {
+        match self {
+            Rule::Sum(r) => r.index,
+            Rule::Permutation(r) => r.index,
+            Rule::Relation(r) => r.index,
+        }
+    }
 }
 
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SumRule {
     pub positions: Vec<Position>,
     pub sum: usize,
+    index: usize,
 }
 
 impl SumRule {
+    pub fn new(positions: Vec<Position>, sum: usize, index: usize) -> Self {
+        SumRule { positions, sum, index}
+    }
     pub fn check(&self, board: &Board) -> RuleCheckResult {
         let current_sum: usize = self
             .positions
             .iter()
-            .map(|&pos| board.get_value(Some(pos)).unwrap_or_default())
+            .map(|&pos| board.get_value(Some(pos)))
             .sum();
 
         match current_sum.cmp(&self.sum) {
@@ -70,32 +82,44 @@ impl SumRule {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct PermutationRule {
     pub positions: Vec<Position>,
+    index: usize,
 }
 
 impl PermutationRule {
+    pub fn new(positions: Vec<Position>, index: usize) -> Self {
+        PermutationRule { positions, index}
+    }
     pub fn check(&self, board: &Board) -> RuleCheckResult {
+        if (self.positions.len() as usize) != board.get_side() {
+            return RuleCheckResult::Ok;
+        }
         let mut values: Vec<usize> = self
             .positions
             .iter()
-            .filter_map(|&pos| board.get_value(Some(pos)))
+            .map(|&pos| board.get_value(Some(pos)))
+            .filter(|&x| x > 0)
             .collect();
-
-
-        if values.len() < board.get_side() {
-            return RuleCheckResult::Unfulfilled(format!(
-                "RULE (permutation): positions {:?} should be a permutation, (elements are missing)",
-                self.positions
-            ));
-        }
 
         values.sort();
         let mut unique_values = values.clone();
         unique_values.dedup();
-
-        if unique_values.len() != values.len() || unique_values.first() != Some(&1) || unique_values.last() != Some(&board.get_side()) {
+        
+        if unique_values.len() != values.len() {
+            RuleCheckResult::Critical(format!(
+                "RULE (permutation): positions {:?} should be a permutation",
+                self.positions
+            ))
+        }
+        else if values.len() < board.get_side() {
+            RuleCheckResult::Unfulfilled(format!(
+                "RULE (permutation): positions {:?} should be a permutation, (elements are missing)",
+                self.positions
+            ))
+        }
+        else if unique_values.first() != Some(&1) || unique_values.last() != Some(&board.get_side()) {
             RuleCheckResult::Critical(format!(
                 "RULE (permutation): positions {:?} should be a permutation",
                 self.positions
@@ -106,22 +130,26 @@ impl PermutationRule {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct RelationRule {
     pub position1: Position,
     pub position2: Position,
+    index: usize,
 }
 
 impl RelationRule {
+    pub fn new(position1: Position, position2: Position, index: usize) -> Self {
+        RelationRule { position1, position2, index}
+    }
     pub fn check(&self, board: &Board) -> RuleCheckResult {
         let value1 = board.get_value(Some(self.position1));
         let value2 = board.get_value(Some(self.position2));
-        if value1.is_none() || value2.is_none() {
+        if value1 == 0 || value2 == 0 {
             RuleCheckResult::Unfulfilled(format!(
                 "RULE (relation): position {:?} or {:?} not filled",
                 self.position1, self.position2
             ))
-        } else if value1.unwrap() >= value2.unwrap() {
+        } else if value1 >= value2 {
             RuleCheckResult::Critical(format!(
                 "RULE (relation): position {:?} should be less than {:?}",
                 self.position1, self.position2

@@ -3,10 +3,9 @@ use relm4::factory::positions::GridPosition;
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
 use relm4::RelmWidgetExt;
 
-const N: usize = 4;
-const R: usize = 2;
-const C: usize = 2;
-const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
+#[warn(unknown_lints, reason="CHANGEDIMENSION")]
+const N: usize = 6;
+const COLOR_LIST : [&str; 10] = ["red", "green", "purple", "orange", "pink", "brown", "black", "yellow", "white", "grey"];
 
 macro_rules! choose_color {
     ($color_index:expr) => {
