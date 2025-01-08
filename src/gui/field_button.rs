@@ -3,9 +3,11 @@ use relm4::factory::positions::GridPosition;
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
 use relm4::RelmWidgetExt;
 
-#[warn(unknown_lints, reason="CHANGEDIMENSION")]
+#[warn(unknown_lints, reason = "CHANGEDIMENSION")]
 const N: usize = 6;
-const COLOR_LIST : [&str; 10] = ["red", "green", "purple", "orange", "pink", "brown", "black", "yellow", "white", "grey"];
+const COLOR_LIST: [&str; 10] = [
+    "red", "green", "purple", "orange", "pink", "brown", "black", "yellow", "white", "grey",
+];
 
 macro_rules! choose_color {
     ($color_index:expr) => {
@@ -26,6 +28,7 @@ pub enum FieldMsg {
     ChangeColor(usize),
     ChangeValue,
     SetValue(usize),
+    SetHints(Vec<usize>),
 }
 
 #[derive(Debug)]
@@ -73,8 +76,13 @@ impl FactoryComponent for Field {
 
     fn init_model(color: Self::Init, index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
         let index = index.current_index();
-        
-        Self { value: 0, display_value: String::from("_"), color, index}
+
+        Self {
+            value: 0,
+            display_value: String::from("_"),
+            color,
+            index,
+        }
     }
 
     fn init_widgets(
@@ -91,7 +99,7 @@ impl FactoryComponent for Field {
                 gtk::Button {
                     set_css_classes: choose_color!(self.color),
                     set_label: &self.display_value,
-                    set_size_request: (100, 50), 
+                    set_size_request: (100, 50),
                     connect_clicked => FieldMsg::ChangeValue,
                     set_margin_all: 5,
                 }
@@ -104,17 +112,28 @@ impl FactoryComponent for Field {
     fn update(&mut self, msg: Self::Input, sender: FactorySender<Self>) {
         match msg {
             FieldMsg::ChangeValue => {
-                sender.output(FieldOutput::FieldClicked(self.index)).unwrap();
+                sender
+                    .output(FieldOutput::FieldClicked(self.index))
+                    .unwrap();
             }
             FieldMsg::SetValue(value) => {
-                self.value = value;
-                self.display_value = match value {
+                dbg!(value);
+                if value == N+1 {
+                    self.value = self.value;
+                } else {
+                    self.value = value;
+                }
+                self.display_value = match self.value {
                     0 => String::from("_"),
-                    _ => value.to_string(),
+                    _ => self.value.to_string(),
                 };
-            },
+            }
             FieldMsg::ChangeColor(color) => {
                 self.color = color;
+            },
+            FieldMsg::SetHints(hint) => {
+                let hintstr = hint.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+                self.display_value = hintstr;
             }
         }
     }

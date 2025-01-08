@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 
-#[warn(unknown_lints, reason="CHANGEDIMENSION")]
-const SIDE: usize = 6; 
+#[warn(unknown_lints, reason = "CHANGEDIMENSION")]
+const SIDE: usize = 6;
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Position {
     row: usize,
@@ -18,12 +18,18 @@ impl Position {
         }
     }
 
+    pub fn from_index(index: usize) -> Option<Self> {
+        let row = index % SIDE + 1;
+        let col = index / SIDE + 1;
+        Position::new(row, col)
+    }
+
     pub fn index(&self) -> usize {
-        (self.row - 1) + (self.col - 1)*SIDE
+        (self.row - 1) + (self.col - 1) * SIDE
     }
 
     pub fn default_color(&self, r: usize, c: usize) -> usize {
-        8 + (((self.row - 1) / r + (self.col - 1) / c)%2)
+        8 + (((self.row - 1) / r + (self.col - 1) / c) % 2)
     }
 
     pub fn row(&self) -> usize {
@@ -33,8 +39,6 @@ impl Position {
     pub fn col(&self) -> usize {
         self.col
     }
-
-
 }
 
 impl std::fmt::Debug for Position {
@@ -63,11 +67,8 @@ impl Board {
         self.board[pos.row - 1][pos.col - 1] = value;
     }
 
-    pub fn get_value(&self, pos: Option<Position>) -> usize {
-        match pos {
-            Some(pos) => self.board[pos.row - 1][pos.col - 1],
-            None => 0,
-        }
+    pub fn get_value(&self, pos: Position) -> usize {
+        self.board[pos.row - 1][pos.col - 1]
     }
 
     pub fn get_side(&self) -> usize {

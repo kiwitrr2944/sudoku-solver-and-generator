@@ -57,7 +57,6 @@ impl Rule {
     }
 }
 
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SumRule {
     pub positions: Vec<Position>,
@@ -67,14 +66,18 @@ pub struct SumRule {
 
 impl SumRule {
     pub fn new(positions: Vec<Position>, sum: usize, index: usize) -> Self {
-        SumRule { positions, sum, index}
+        SumRule {
+            positions,
+            sum,
+            index,
+        }
     }
 
     pub fn check(&self, board: &Board) -> RuleCheckResult {
         let current_sum: usize = self
             .positions
             .iter()
-            .map(|&pos| board.get_value(Some(pos)))
+            .map(|&pos| board.get_value(pos))
             .sum();
 
         match current_sum.cmp(&self.sum) {
@@ -99,36 +102,36 @@ pub struct PermutationRule {
 
 impl PermutationRule {
     pub fn new(positions: Vec<Position>, index: usize) -> Self {
-        PermutationRule { positions, index}
+        PermutationRule { positions, index }
     }
     pub fn check(&self, board: &Board) -> RuleCheckResult {
-        if (self.positions.len() as usize) != board.get_side() {
+        if (self.positions.len()) != board.get_side() {
             return RuleCheckResult::Ok;
         }
         let mut values: Vec<usize> = self
             .positions
             .iter()
-            .map(|&pos| board.get_value(Some(pos)))
+            .map(|&pos| board.get_value(pos))
             .filter(|&x| x > 0)
             .collect();
 
         values.sort();
         let mut unique_values = values.clone();
         unique_values.dedup();
-        
+
         if unique_values.len() != values.len() {
             RuleCheckResult::Critical(format!(
                 "(permutation): positions {:?} should be a permutation",
                 self.positions
             ))
-        }
-        else if values.len() < board.get_side() {
+        } else if values.len() < board.get_side() {
             RuleCheckResult::Unfulfilled(format!(
                 "(permutation): positions {:?} should be a permutation, (elements are missing)",
                 self.positions
             ))
-        }
-        else if unique_values.first() != Some(&1) || unique_values.last() != Some(&board.get_side()) {
+        } else if unique_values.first() != Some(&1)
+            || unique_values.last() != Some(&board.get_side())
+        {
             RuleCheckResult::Critical(format!(
                 "(permutation): positions {:?} should be a permutation",
                 self.positions
@@ -147,15 +150,18 @@ pub struct RelationRule {
 
 impl RelationRule {
     pub fn new(index: usize) -> Self {
-        RelationRule { positions: vec![], index}
+        RelationRule {
+            positions: vec![],
+            index,
+        }
     }
 
     pub fn check(&self, board: &Board) -> RuleCheckResult {
         if self.positions.len() != 2 {
             return RuleCheckResult::Ok;
         }
-        let value1 = board.get_value(Some(self.positions[0]));
-        let value2 = board.get_value(Some(self.positions[1]));
+        let value1 = board.get_value(self.positions[0]);
+        let value2 = board.get_value(self.positions[1]);
         if value1 == 0 || value2 == 0 {
             RuleCheckResult::Unfulfilled(format!(
                 "(relation): position {:?} or {:?} not filled",

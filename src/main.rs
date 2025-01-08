@@ -2,6 +2,9 @@ mod gui;
 mod logic;
 use gui::app::App;
 use relm4::RelmApp;
+#[macro_use]
+mod macros;
+
 
 fn main() {
     let app = RelmApp::new("relm4.sudoku");

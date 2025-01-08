@@ -1,15 +1,16 @@
+use super::board::{Board, Position};
 use super::game::Game;
 use super::rules::{Rule, RuleCheckResult};
-use super::board::{Board, Position};
 use rand::seq::SliceRandom;
+use crate::for_pos;
 
 pub struct Solver {
     pub board: Board,
     solution: Option<Board>,
     rules: Vec<Rule>,
     n: usize,
-    options: Vec<Vec<Vec<usize> > >,
-    position_rules: Vec<Vec<Vec<usize> > >,
+    options: Vec<Vec<Vec<usize>>>,
+    position_rules: Vec<Vec<Vec<usize>>>,
     ok: bool,
     rng: rand::rngs::ThreadRng,
     random: bool,
@@ -21,7 +22,6 @@ impl Solver {
         let options = vec![vec![(1..=n).collect(); n]; n];
         let mut position_rules = vec![vec![vec![]; n]; n];
 
-
         for rule in &game.rules() {
             dbg!(rule);
             for pos in rule.get_positions() {
@@ -29,8 +29,8 @@ impl Solver {
                 let col = pos.col() - 1;
                 position_rules[row][col].push(rule.get_index());
             }
-        } 
-        
+        }
+
         let mut ret = Solver {
             board: game.board(),
             solution: None,
@@ -45,35 +45,32 @@ impl Solver {
 
         let board = game.board();
 
-        for row in 1..=n {
-            for col in 1..=n {
-                let p = Position::new(row, col);
-                let v = board.get_value(p);
-                if board.get_value(p) > 0 {
-                    let ok = ret.place(p.unwrap(), v);
-                    ret.ok &= ok;
-                }
+        for_pos!(n, |pos| {
+            let v = board.get_value(pos);
+            if board.get_value(pos) > 0 {
+                let ok = ret.place(pos, v);
+                ret.ok &= ok;
             }
-        }
+        });
 
         dbg!(ret.ok);
-        ret        
+        ret
     }
 
     fn place(&mut self, pos: Position, digit: usize) -> bool {
         let row = pos.row() - 1;
         let col = pos.col() - 1;
-        
+
         // Save the current state to restore later if needed
-        let original_value = self.board.get_value(Some(pos));
+        let original_value = self.board.get_value(pos);
         let original_options = self.options.clone();
-        
+
         if !self.options[row][col].contains(&digit) {
             return false;
         }
         // Place the digit
         self.board.set_value(pos, digit);
-        
+
         // Check if placing the digit violates any rules
         for &rule_index in &self.position_rules[row][col] {
             let rule = &self.rules[rule_index];
@@ -90,7 +87,7 @@ impl Solver {
             for pos in rule.get_positions() {
                 let r = pos.row() - 1;
                 let c = pos.col() - 1;
-                if self.board.get_value(Some(pos)) == 0 {
+                if self.board.get_value(pos) == 0 {
                     self.options[r][c].retain(|&x| x != digit);
                     if self.options[r][c].is_empty() {
                         // Restore the original state
@@ -109,7 +106,7 @@ impl Solver {
         let row = pos.row() - 1;
         let col = pos.col() - 1;
 
-        let original_value = self.board.get_value(Some(pos));
+        let original_value = self.board.get_value(pos);
         if original_value == 0 {
             return;
         }
@@ -123,7 +120,7 @@ impl Solver {
                 for pos in rule.get_positions() {
                     let r = pos.row() - 1;
                     let c = pos.col() - 1;
-                    if self.board.get_value(Some(pos)) == 0 {
+                    if self.board.get_value(pos) == 0 {
                         self.options[r][c].push(original_value);
                     }
                 }
@@ -156,37 +153,40 @@ impl Solver {
     pub fn solve(&mut self) {
         if !self.ok {
             self.solution = None;
-            return ;
+            return;
         }
 
         self.solve_recursive();
     }
 
+    pub fn get_options(&self, pos: Position) -> Vec<usize> {
+        self.options[pos.row() - 1][pos.col() - 1].clone()
+    }
+
     fn get_next_position(&self) -> Option<Position> {
         let mut ret: (Vec<usize>, Option<Position>) = (vec![], None);
 
-        for row in 1..=self.n {
-            for col in 1..=self.n {
-                if self.board.get_value(Position::new(row, col)) == 0 {
-                    let options = &self.options[row - 1][col - 1];
-                    if (options.len() > 0) && (ret.1.is_none() || options.len() < ret.0.len()) {
-                        ret = (options.clone(), Position::new(row, col));
-                    }
+        for_pos!(self.n, |pos| {
+            if self.board.get_value(pos) == 0 {
+                let options = &self.get_options(pos);
+                if (!options.is_empty()) && (ret.1.is_none() || options.len() < ret.0.len()) {
+                    ret = (options.clone(), Some(pos));
                 }
             }
-        }
-        return ret.1;
+        });
+
+        ret.1
     }
 
     pub fn solve_recursive(&mut self) -> bool {
         let pos = self.get_next_position();
-        
+
         dbg!(pos);
         print!("{}", self.board);
-        
+
         match pos {
             Some(pos) => {
-                let mut opt = self.options[pos.row()-1][pos.col()-1].clone();
+                let mut opt = self.options[pos.row() - 1][pos.col() - 1].clone();
                 if self.random {
                     opt.shuffle(&mut self.rng);
                 }
@@ -197,16 +197,15 @@ impl Solver {
                     }
                     self.unplace(pos);
                 }
-                return false;
+                false
             }
             None => {
                 let state = self.check_rules();
                 if state == 2 {
                     self.solution = Some(self.board.clone());
-                    return true;
-                }
-                else {
-                    return false;    
+                    true
+                } else {
+                    false
                 }
             }
         }
@@ -233,5 +232,5 @@ impl Solver {
 
         game.set_board(x);
         game
-    }   
+    }
 }

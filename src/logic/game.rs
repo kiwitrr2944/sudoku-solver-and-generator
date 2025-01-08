@@ -27,17 +27,17 @@ impl Game {
             game.add_rule(Rule::Permutation(PermutationRule::new(positions, rc)));
             rc += 1;
         }
-        
+
         for col in 1..=side {
             let positions: Vec<Position> = (1..=side)
-            .filter_map(|row| Position::new(row, col))
-            .collect();
+                .filter_map(|row| Position::new(row, col))
+                .collect();
             game.add_rule(Rule::Permutation(PermutationRule::new(positions, rc)));
             rc += 1;
         }
-    
-        for sub_row in 0..side/sub_rows {
-            for sub_col in 0..side/sub_cols {
+
+        for sub_row in 0..side / sub_rows {
+            for sub_col in 0..side / sub_cols {
                 dbg!(sub_row, sub_col, "----------");
                 let mut positions = Vec::new();
                 for row in 1..=sub_rows {
@@ -53,7 +53,7 @@ impl Game {
                 rc += 1;
             }
         }
-        
+
         dbg!(&game.rules);
         game.base_rule_count = rc;
         game
@@ -98,8 +98,16 @@ impl Game {
         }
 
         (
-            if violations.is_empty() { None } else { Some(violations) },
-            if pending.is_empty() { None } else { Some(pending) },
+            if violations.is_empty() {
+                None
+            } else {
+                Some(violations)
+            },
+            if pending.is_empty() {
+                None
+            } else {
+                Some(pending)
+            },
         )
     }
 
@@ -117,7 +125,7 @@ impl Game {
     }
 
     pub fn display(&self) {
-        print!("{}", self.board()); 
+        print!("{}", self.board());
     }
 
     pub fn board(&self) -> Board {
@@ -128,14 +136,10 @@ impl Game {
         self.rules.clone()
     }
 
-    pub fn set_value(&mut self, pos: Option<Position>, value: usize) {
-        print!("{}", self.board());
-        match pos {
-            Some(pos) => self.board.set_value(pos, value),
-            None => {}
-        }
+    pub fn set_value(&mut self, pos: Position, value: usize) {
+        self.board.set_value(pos, value);
     }
-    pub fn get_value(&self, pos: Option<Position>) -> usize {
+    pub fn get_value(&self, pos: Position) -> usize {
         self.board.get_value(pos)
     }
 

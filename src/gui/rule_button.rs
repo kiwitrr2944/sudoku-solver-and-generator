@@ -3,7 +3,9 @@ use relm4::factory::positions::GridPosition;
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
 use relm4::RelmWidgetExt;
 
-const COLOR_LIST : [&str; 8] = ["red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
+const COLOR_LIST: [&str; 8] = [
+    "red", "green", "purple", "orange", "pink", "brown", "black", "yellow",
+];
 
 macro_rules! choose_color {
     ($color_index:expr) => {
@@ -38,7 +40,7 @@ impl Position<GridPosition, DynamicIndex> for RuleButton {
         let y = index;
         GridPosition {
             column: y as i32,
-            row: 0 as i32,
+            row: 0_i32,
             width: 1,
             height: 1,
         }
@@ -65,10 +67,18 @@ impl FactoryComponent for RuleButton {
         root
     }
 
-    fn init_model((display_value, color): Self::Init, index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
+    fn init_model(
+        (display_value, color): Self::Init,
+        index: &DynamicIndex,
+        _sender: FactorySender<Self>,
+    ) -> Self {
         let index = index.current_index();
-        
-        Self {display_value, color, index}
+
+        Self {
+            display_value,
+            color,
+            index,
+        }
     }
 
     fn init_widgets(

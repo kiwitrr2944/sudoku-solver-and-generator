@@ -1,24 +1,31 @@
+use crate::{for_pos};
 use super::field_button::{Field, FieldMsg, FieldOutput};
 use super::rule_button::{RuleButton, RuleOutput};
-use gtk::prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt, *};
-use gtk::glib::Propagation;
 use crate::logic::board::Position;
 use crate::logic::game;
-use crate::logic::rules::{PermutationRule, Rule, SumRule, RelationRule};
+use crate::logic::rules::{PermutationRule, RelationRule, Rule, SumRule};
+use gtk::glib::Propagation;
+use gtk::prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt, *};
 use relm4::factory::FactoryVecDeque;
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
 
-#[warn(unknown_lints, reason="CHANGEDIMENSION")]
-const N: usize = 6;
-const R: usize = 2;
-const C: usize = 3;
-const COLOR_LIST : [&str; 10] = ["white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow"];
 
+const COLOR_LIST: [&str; 10] = [
+    "white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow",
+];
+
+#[macro_export]
 macro_rules! choose_color {
     ($color_index:expr) => {
         &[&COLOR_LIST[$color_index]]
     };
 }
+
+
+#[warn(unknown_lints, reason = "CHANGEDIMENSION")]
+const N: usize = 6;
+const R: usize = 2;
+const C: usize = 3;
 
 fn popup(text: &str) {
     let dialog = gtk::MessageDialog::new(
@@ -43,6 +50,7 @@ pub struct App {
     finished: usize,
     planning: bool,
     show_rules: bool,
+    hints: bool,
 }
 
 #[derive(Debug)]
@@ -56,6 +64,7 @@ pub enum AppMsg {
     TogglePlanning,
     ToggleRules,
     Help,
+    Hints,
     Generate,
 }
 
@@ -74,16 +83,16 @@ impl SimpleComponent for App {
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 50,
                 set_margin_all: 50,
-                set_css_classes: choose_color!(0),
-                
+                set_css_classes: &["white"],
+
                 gtk::Box {
                     set_orientation: gtk::Orientation::Vertical,
                     #[name(value_label)]
                     gtk::Label {
                         #[watch]
-                        set_label: &format!("Current setting value: {}", model.global_value),
+                        set_label: &format!("Value: {}. Click 'h' to show help", model.global_value),
                     },
-                    
+
                     gtk::Box {
                         set_orientation: gtk::Orientation::Vertical,
 
@@ -91,25 +100,25 @@ impl SimpleComponent for App {
                         gtk::Box {
                             #[watch]
                             set_orientation: gtk::Orientation::Horizontal,
-                            
+
                             gtk::Box {
                                 gtk::MenuButton {
                                     set_label: "Add rule",
                                     set_direction: gtk::ArrowType::Right,
-                                    
+
                                     #[wrap(Some)]
                                     set_popover: popover = &gtk::Popover {
                                         set_position: gtk::PositionType::Right,
-                                    
+
                                         gtk::Box {
                                             set_orientation: gtk::Orientation::Vertical,
                                             set_spacing: 5,
-                                            
+
                                             gtk::Button {
                                                 set_label: "Permutation",
                                                 connect_clicked => AppMsg::AddRule(0, 0.to_string()),
                                             },
-                                            
+
                                             gtk::Box {
                                                 set_orientation: gtk::Orientation::Horizontal,
                                                 gtk::Label {
@@ -120,7 +129,7 @@ impl SimpleComponent for App {
                                                         let buffer = entry.buffer();
                                                         sender.input(AppMsg::AddRule(1, buffer.text().into()));
                                                         buffer.delete_text(0, None);
-                                                    } 
+                                                    }
                                                 },
                                             },
 
@@ -132,7 +141,7 @@ impl SimpleComponent for App {
                                     },
                                 },
 
-                                
+
                                 #[local_ref]
                                 rule_grid -> gtk::Grid {
                                     set_orientation: gtk::Orientation::Vertical,
@@ -141,7 +150,7 @@ impl SimpleComponent for App {
                                 }
                             }
                         },
-                        
+
                         #[local_ref]
                         field_grid -> gtk::Grid {
                             set_orientation: gtk::Orientation::Vertical,
@@ -152,13 +161,13 @@ impl SimpleComponent for App {
                         }
                     },
                 },
-                    
+
                 gtk::Box {
                     gtk::Label {
                         #[watch]
                         set_visible: model.show_rules,
                         #[watch]
-                        set_label: format!("{}", model.game.get_rules_state()).as_str(),
+                        set_label: model.game.get_rules_state().as_str(),
                     }
                 }
             },
@@ -172,6 +181,7 @@ impl SimpleComponent for App {
                             15 => sender.input(AppMsg::Solve),
                             16 => sender.input(AppMsg::Generate),
                             17 => sender.input(AppMsg::Help),
+                            25 => sender.input(AppMsg::Hints),
                             27 => sender.input(AppMsg::TogglePlanning),
                             31 => sender.input(AppMsg::ToggleRules),
                             _ => {}
@@ -195,13 +205,13 @@ impl SimpleComponent for App {
                     FieldOutput::FieldClicked(index) => AppMsg::FieldClicked(index),
                 });
 
-        let rules = FactoryVecDeque::builder()
-            .launch_default()
-            .forward(sender.input_sender(), |msg| match msg {
-                RuleOutput::RuleClicked(index) => AppMsg::RuleActive(index),
-            });
+        let rules =
+            FactoryVecDeque::builder()
+                .launch_default()
+                .forward(sender.input_sender(), |msg| match msg {
+                    RuleOutput::RuleClicked(index) => AppMsg::RuleActive(index),
+                });
 
-                
         let mut model = App {
             fields,
             rules,
@@ -211,23 +221,20 @@ impl SimpleComponent for App {
             finished: 0,
             planning: true,
             show_rules: false,
+            hints: false,
         };
-
 
         let field_grid = model.fields.widget();
         let rule_grid = model.rules.widget();
         let widgets = view_output!();
 
-        for i in 1..=N {
-            for j in 1..=N {
-                let color = Position::new(j, i).unwrap().default_color(R, C);
-                model.fields.guard().push_back(color);
-            }
-        }
+        for_pos!(N, |pos: Position| {
+            let color = pos.default_color(R, C);
+            model.fields.guard().push_back(color);
+        });
 
         ComponentParts { model, widgets }
     }
-
 
     fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>) {
         let fields_guard = self.fields.guard();
@@ -238,39 +245,57 @@ impl SimpleComponent for App {
                 dbg!("Field clicked", index, self.planning);
                 if self.planning {
                     if rules_guard.is_empty() {
-                        return ;
+                        return;
                     }
-                    let pos = crate::logic::board::Position::new(1 + index%N, 1 + index/N).unwrap();
+                    let pos = Position::from_index(index).unwrap();
                     let rule: Rule = self.game.get_rule(self.rule_active);
-                    
+
                     if rule.get_positions().contains(&pos) {
                         dbg!("Remove position", pos);
                         self.game.remove_position_from_rule(self.rule_active, pos);
                         fields_guard.send(index, FieldMsg::ChangeColor(pos.default_color(R, C)));
-                    }
-                    else {
+                    } else {
                         self.game.add_position_to_rule(self.rule_active, pos);
                         fields_guard.send(index, FieldMsg::ChangeColor(self.rule_active));
                         dbg!("Add position", pos);
                     }
-                }
-                else {
-                    self.game.set_value(crate::logic::board::Position::new(1 + index%N, 1 + index/N), self.global_value);
+                } else {
+                    self.game.set_value(
+                        Position::from_index(index).unwrap(),
+                        self.global_value,
+                    );
                     let state = self.game.check_rules();
-                    match state {
-                        (None, None) => {
-                            self.finished = 0;
-                            sender.input(AppMsg::Finished);
-                        }
-                        _ => {}
+
+                    if let (None, None) = state {
+                        self.finished = 0;
+                        sender.input(AppMsg::Finished);
                     }
+
                     fields_guard.send(index, FieldMsg::SetValue(self.global_value));
                 }
-            },
+            }
             AppMsg::ChangeValue(value) => {
                 self.global_value = value;
-            },
-            
+            }
+
+            AppMsg::Hints => {
+                if self.hints {
+                    for_pos!(N, |pos: Position| {
+                        fields_guard.send(pos.index(), FieldMsg::SetValue(N+1));
+                    });
+                    self.hints = false;
+                } else {
+                    let solver = crate::logic::solver::Solver::new(self.game.clone(), false);
+                    
+                    for_pos!(N, |pos: Position| {
+                        let hints = solver.get_options(pos);
+                        fields_guard.send(pos.index(), FieldMsg::SetHints(hints));
+                    });
+                    self.hints = true;
+                }
+                    
+            }
+
             AppMsg::Solve => {
                 let mut sol = crate::logic::solver::Solver::new(self.game.clone(), false);
 
@@ -278,34 +303,30 @@ impl SimpleComponent for App {
                 let solution = sol.get_solution();
 
                 if let Some(solution) = solution {
-                    for i in 0..N {
-                        for j in 0..N {
-                            let index = i * N + j;
-                            let pos = crate::logic::board::Position::new(1 + j, 1 + i);
-                            let sval = solution.get_value(pos);
-                            let curval = self.game.get_value(pos);
-                            if curval == 0 {
-                                self.game.set_value(pos, sval);
-                                fields_guard.send(index, FieldMsg::SetValue(sval));
-                            }
+                    for_pos!(N, |pos| {
+                        let sval = solution.get_value(pos);
+                        let curval = self.game.get_value(pos);
+                        if curval == 0 {
+                            self.game.set_value(pos, sval);
+                            fields_guard.send(pos.index(), FieldMsg::SetValue(sval));
                         }
-                    }
+                    });
                     self.finished = 0;
                 } else {
                     self.finished = 1;
                     dbg!("No solution found");
                 }
                 sender.input(AppMsg::Finished);
-            },
+            }
 
             AppMsg::Finished => {
                 dbg!("Finished");
-            },
-            
+            }
+
             AppMsg::TogglePlanning => {
                 self.planning = !self.planning;
                 dbg!(self.game.rules());
-            },
+            }
 
             AppMsg::AddRule(t, value) => {
                 dbg!("Add rule");
@@ -317,26 +338,38 @@ impl SimpleComponent for App {
 
                 if t == 0 {
                     rules_guard.push_back((String::from("Permutation"), index));
-                    self.game.add_rule(Rule::Permutation(PermutationRule::new(vec![], self.game.get_base_rule_count() + index)));
-                }
-                else if t == 1 {
+                    self.game.add_rule(Rule::Permutation(PermutationRule::new(
+                        vec![],
+                        self.game.get_base_rule_count() + index,
+                    )));
+                } else if t == 1 {
                     let value = value.parse::<usize>();
                     if let Ok(value) = value {
-                        rules_guard.push_back((format!("SUM: {}", value.to_string()), index));
-                        self.game.add_rule(Rule::Sum(SumRule::new(vec![], value, self.game.get_base_rule_count() + index)));
-                    }
-                    else {
+                        rules_guard.push_back((format!("SUM: {}", value), index));
+                        self.game.add_rule(Rule::Sum(SumRule::new(
+                            vec![],
+                            value,
+                            self.game.get_base_rule_count() + index,
+                        )));
+                    } else {
                         popup("Invalid rule value");
                     }
-                }
-                else {
+                } else {
                     rules_guard.push_back((String::from("Relation"), index));
-                    self.game.add_rule(Rule::Relation(RelationRule::new(self.game.get_base_rule_count() + index)));
+                    self.game.add_rule(Rule::Relation(RelationRule::new(
+                        self.game.get_base_rule_count() + index,
+                    )));
                 }
-            },
+            }
 
             AppMsg::RuleActive(index) => {
-                dbg!("Rule active", self.planning, self.rule_active, index, self.game.get_rule(index).get_positions());
+                dbg!(
+                    "Rule active",
+                    self.planning,
+                    self.rule_active,
+                    index,
+                    self.game.get_rule(index).get_positions()
+                );
                 let rule = self.game.get_rule(self.rule_active);
                 for pos in rule.get_positions() {
                     let id = pos.index();
@@ -344,18 +377,19 @@ impl SimpleComponent for App {
                     dbg!("Change color", id, color);
                     fields_guard.send(id, FieldMsg::ChangeColor(color));
                 }
-                
+
                 self.rule_active = index;
-            
+
                 let rule = self.game.get_rule(self.rule_active);
                 for pos in rule.get_positions() {
-                    let index = pos.index();    
+                    let index = pos.index();
                     fields_guard.send(index, FieldMsg::ChangeColor(self.rule_active));
                 }
-            },
+            }
 
             AppMsg::Help => {
-                popup("Help:\n\
+                popup(
+                    "Help:\n\
                 press 0-N to choose current setting value,\n\
                 you can move with arrows to select field and press Enter to set value,\n\
                 clicking on field will also set current setting value,\n\
@@ -363,22 +397,21 @@ impl SimpleComponent for App {
                 'l' to load game from file,\n\
                 'f' to finish game using solver,\n\
                 'r' to toggle planning mode,\n\
-                ");
+                'p' to show all possible values for every field,\n\
+                'g' to generate sudoku game,\n\
+                ",
+                );
             }
 
             AppMsg::Generate => {
                 self.game = crate::logic::solver::Solver::generate(self.game.clone());
-                for i in 0..N {
-                    for j in 0..N {
-                        let index = i * N + j;
-                        let pos = crate::logic::board::Position::new(1 + j, 1 + i);
+                for_pos!(N, |pos: Position| {
                         let sval = self.game.get_value(pos);
                         self.game.set_value(pos, sval);
-                        fields_guard.send(index, FieldMsg::SetValue(sval));
-                    }
-                }
-            },
-            
+                        fields_guard.send(pos.index(), FieldMsg::SetValue(sval));
+                });
+            }
+
             AppMsg::ToggleRules => {
                 self.show_rules = !self.show_rules;
             }
