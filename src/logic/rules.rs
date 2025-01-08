@@ -61,6 +61,7 @@ impl SumRule {
     pub fn new(positions: Vec<Position>, sum: usize, index: usize) -> Self {
         SumRule { positions, sum, index}
     }
+
     pub fn check(&self, board: &Board) -> RuleCheckResult {
         let current_sum: usize = self
             .positions
@@ -70,11 +71,11 @@ impl SumRule {
 
         match current_sum.cmp(&self.sum) {
             std::cmp::Ordering::Less => RuleCheckResult::Unfulfilled(format!(
-                "RULE (sum): positions {:?} should sum to {}, currently {}",
+                "(sum): positions {:?} should sum to {}, currently {}",
                 self.positions, self.sum, current_sum
             )),
             std::cmp::Ordering::Greater => RuleCheckResult::Critical(format!(
-                "RULE (sum): positions {:?} should sum to {}, currently {}",
+                "(sum): positions {:?} should sum to {}, currently {}",
                 self.positions, self.sum, current_sum
             )),
             std::cmp::Ordering::Equal => RuleCheckResult::Ok,
@@ -109,19 +110,19 @@ impl PermutationRule {
         
         if unique_values.len() != values.len() {
             RuleCheckResult::Critical(format!(
-                "RULE (permutation): positions {:?} should be a permutation",
+                "(permutation): positions {:?} should be a permutation",
                 self.positions
             ))
         }
         else if values.len() < board.get_side() {
             RuleCheckResult::Unfulfilled(format!(
-                "RULE (permutation): positions {:?} should be a permutation, (elements are missing)",
+                "(permutation): positions {:?} should be a permutation, (elements are missing)",
                 self.positions
             ))
         }
         else if unique_values.first() != Some(&1) || unique_values.last() != Some(&board.get_side()) {
             RuleCheckResult::Critical(format!(
-                "RULE (permutation): positions {:?} should be a permutation",
+                "(permutation): positions {:?} should be a permutation",
                 self.positions
             ))
         } else {
@@ -146,12 +147,12 @@ impl RelationRule {
         let value2 = board.get_value(Some(self.position2));
         if value1 == 0 || value2 == 0 {
             RuleCheckResult::Unfulfilled(format!(
-                "RULE (relation): position {:?} or {:?} not filled",
+                "(relation): position {:?} or {:?} not filled",
                 self.position1, self.position2
             ))
         } else if value1 >= value2 {
             RuleCheckResult::Critical(format!(
-                "RULE (relation): position {:?} should be less than {:?}",
+                "(relation): position {:?} should be less than {:?}",
                 self.position1, self.position2
             ))
         } else {

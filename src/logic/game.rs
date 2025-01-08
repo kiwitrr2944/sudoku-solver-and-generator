@@ -146,4 +146,25 @@ impl Game {
     pub fn set_board(&mut self, board: Board) {
         self.board = board;
     }
+
+    pub fn get_rules_state(&self) -> String {
+        let (violations, pendings) = self.check_rules();
+        let mut state = String::from("Violated rules: \n");
+        if let Some(violations) = violations {
+            for violation in violations {
+                state += &violation;
+                state += "\n";
+            }
+        }
+
+        state += "Pending rules: \n";
+
+        if let Some(pendings) = pendings {
+            for pending in pendings {
+                state += &pending;
+                state += "\n";
+            }
+        }
+        state
+    }
 }

@@ -41,6 +41,7 @@ pub struct App {
     game: game::Game,
     finished: usize,
     planning: bool,
+    show_rules: bool,
 }
 
 #[derive(Debug)]
@@ -52,6 +53,7 @@ pub enum AppMsg {
     RuleActive(usize),
     Finished,
     TogglePlanning,
+    ToggleRules,
     Help,
     Generate,
 }
@@ -68,56 +70,74 @@ impl SimpleComponent for App {
             set_default_size: (500, 500),
 
             gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
+                set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 50,
                 set_margin_all: 50,
                 set_css_classes: choose_color!(0),
                 
-                #[name(value_label)]
-                gtk::Label {
-                    #[watch]
-                    set_label: &format!("Current setting value: {}", model.global_value),
-                },
-
-                #[name(custom_rules)]
                 gtk::Box {
-                    #[watch]
-                    set_orientation: gtk::Orientation::Horizontal,
-
-                    gtk::Button {
-                        #[watch]
-                        set_visible: model.planning,
-                        set_label: "Add Rule",
-                        connect_clicked => AppMsg::AddRule,
-                    },
-
-                    #[local_ref]
-                    rule_grid -> gtk::Grid {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_column_spacing: 15,
-                        set_row_spacing: 5,
-                    }
-                },
-                
-                #[local_ref]
-                field_grid -> gtk::Grid {
                     set_orientation: gtk::Orientation::Vertical,
-                    set_column_spacing: 15,
-                    set_row_spacing: 5,
-                    #[watch]
-                    set_css_classes: choose_color!(model.finished),
+                    #[name(value_label)]
+                    gtk::Label {
+                        #[watch]
+                        set_label: &format!("Current setting value: {}", model.global_value),
+                    },
+                    
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+
+                        #[name(custom_rules)]
+                        gtk::Box {
+                            #[watch]
+                            set_orientation: gtk::Orientation::Horizontal,
+                            
+                            gtk::Button {
+                                #[watch]
+                                set_visible: model.planning,
+                                set_label: "Add Rule",
+                                connect_clicked => AppMsg::AddRule,
+                            },
+                            
+                            #[local_ref]
+                            rule_grid -> gtk::Grid {
+                                set_orientation: gtk::Orientation::Vertical,
+                                set_column_spacing: 15,
+                                set_row_spacing: 5,
+                            }
+                        },
+                        
+                        #[local_ref]
+                        field_grid -> gtk::Grid {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_column_spacing: 15,
+                            set_row_spacing: 5,
+                            #[watch]
+                            set_css_classes: choose_color!(model.finished),
+                        }
+                    },
+                },
+                    
+                gtk::Box {
+                    gtk::Label {
+                        #[watch]
+                        set_visible: model.show_rules,
+                        #[watch]
+                        set_label: format!("{}", model.game.get_rules_state()).as_str(),
+                    }
                 }
             },
 
             add_controller = gtk::EventControllerKey::new() {
                 connect_key_pressed[sender] => move |_, keyval, _, _| {
                     if let Some(keyval) = keyval.to_unicode().and_then(|c| c.to_digit(36)) {
+                        dbg!(keyval);
                         match keyval as usize {
                             0..=N => sender.input(AppMsg::ChangeValue(keyval as usize)),
                             15 => sender.input(AppMsg::Solve),
                             16 => sender.input(AppMsg::Generate),
                             17 => sender.input(AppMsg::Help),
                             27 => sender.input(AppMsg::TogglePlanning),
+                            31 => sender.input(AppMsg::ToggleRules),
                             _ => {}
                         }
                     }
@@ -154,6 +174,7 @@ impl SimpleComponent for App {
             game: crate::logic::game::Game::new(N, R, C),
             finished: 0,
             planning: true,
+            show_rules: false,
         };
 
 
@@ -301,6 +322,10 @@ impl SimpleComponent for App {
                         fields_guard.send(index, FieldMsg::SetValue(sval));
                     }
                 }
+            },
+            
+            AppMsg::ToggleRules => {
+                self.show_rules = !self.show_rules;
             }
         }
     }

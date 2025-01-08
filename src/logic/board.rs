@@ -3,7 +3,7 @@ use std::fmt::{self, Display};
 
 #[warn(unknown_lints, reason="CHANGEDIMENSION")]
 const SIDE: usize = 6; 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Position {
     row: usize,
     col: usize,
@@ -32,6 +32,12 @@ impl Position {
 
     pub fn col(&self) -> usize {
         self.col
+    }
+}
+
+impl std::fmt::Debug for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.row, self.col)
     }
 }
 
