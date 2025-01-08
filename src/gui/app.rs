@@ -1,9 +1,10 @@
 use super::field_button::{Field, FieldMsg, FieldOutput};
 use super::rule_button::{RuleButton, RuleOutput};
-use gtk::glib::Propagation;
 use gtk::prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt, *};
+use gtk::glib::Propagation;
+use crate::logic::board::Position;
 use crate::logic::game;
-use crate::logic::rules::{PermutationRule, Rule};
+use crate::logic::rules::{PermutationRule, Rule, SumRule, RelationRule};
 use relm4::factory::FactoryVecDeque;
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
 
@@ -49,7 +50,7 @@ pub enum AppMsg {
     FieldClicked(usize),
     ChangeValue(usize),
     Solve,
-    AddRule,
+    AddRule(usize, String),
     RuleActive(usize),
     Finished,
     TogglePlanning,
@@ -91,18 +92,53 @@ impl SimpleComponent for App {
                             #[watch]
                             set_orientation: gtk::Orientation::Horizontal,
                             
-                            gtk::Button {
-                                #[watch]
-                                set_visible: model.planning,
-                                set_label: "Add Rule",
-                                connect_clicked => AppMsg::AddRule,
-                            },
-                            
-                            #[local_ref]
-                            rule_grid -> gtk::Grid {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_column_spacing: 15,
-                                set_row_spacing: 5,
+                            gtk::Box {
+                                gtk::MenuButton {
+                                    set_label: "Add rule",
+                                    set_direction: gtk::ArrowType::Right,
+                                    
+                                    #[wrap(Some)]
+                                    set_popover: popover = &gtk::Popover {
+                                        set_position: gtk::PositionType::Right,
+                                    
+                                        gtk::Box {
+                                            set_orientation: gtk::Orientation::Vertical,
+                                            set_spacing: 5,
+                                            
+                                            gtk::Button {
+                                                set_label: "Permutation",
+                                                connect_clicked => AppMsg::AddRule(0, 0.to_string()),
+                                            },
+                                            
+                                            gtk::Box {
+                                                set_orientation: gtk::Orientation::Horizontal,
+                                                gtk::Label {
+                                                    set_label: "Sum: ",
+                                                },
+                                                gtk::Entry {
+                                                    connect_activate[sender] => move |entry| {
+                                                        let buffer = entry.buffer();
+                                                        sender.input(AppMsg::AddRule(1, buffer.text().into()));
+                                                        buffer.delete_text(0, None);
+                                                    } 
+                                                },
+                                            },
+
+                                            gtk::Button {
+                                                set_label: "Relation: ",
+                                                connect_clicked => AppMsg::AddRule(2, 0.to_string()),
+                                            }
+                                        },
+                                    },
+                                },
+
+                                
+                                #[local_ref]
+                                rule_grid -> gtk::Grid {
+                                    set_orientation: gtk::Orientation::Vertical,
+                                    set_column_spacing: 15,
+                                    set_row_spacing: 5,
+                                }
                             }
                         },
                         
@@ -182,10 +218,10 @@ impl SimpleComponent for App {
         let rule_grid = model.rules.widget();
         let widgets = view_output!();
 
-        for i in 0..N {
-            for j in 0..N {
-                let color = (i / C + j / R) % 2;
-                model.fields.guard().push_back(8 + color);
+        for i in 1..=N {
+            for j in 1..=N {
+                let color = Position::new(j, i).unwrap().default_color(R, C);
+                model.fields.guard().push_back(color);
             }
         }
 
@@ -209,6 +245,8 @@ impl SimpleComponent for App {
                     
                     if rule.get_positions().contains(&pos) {
                         dbg!("Remove position", pos);
+                        self.game.remove_position_from_rule(self.rule_active, pos);
+                        fields_guard.send(index, FieldMsg::ChangeColor(pos.default_color(R, C)));
                     }
                     else {
                         self.game.add_position_to_rule(self.rule_active, pos);
@@ -269,25 +307,42 @@ impl SimpleComponent for App {
                 dbg!(self.game.rules());
             },
 
-            AppMsg::AddRule => {
+            AppMsg::AddRule(t, value) => {
                 dbg!("Add rule");
                 let index = rules_guard.len();
                 if index > 9 {
                     popup("Maximum number of rules reached");
                     return;
                 }
-                rules_guard.push_back((String::from("RULE"), index));
-                self.game.add_rule(Rule::Permutation(PermutationRule::new(vec![], self.game.get_base_rule_count() + index)));
+
+                if t == 0 {
+                    rules_guard.push_back((String::from("Permutation"), index));
+                    self.game.add_rule(Rule::Permutation(PermutationRule::new(vec![], self.game.get_base_rule_count() + index)));
+                }
+                else if t == 1 {
+                    let value = value.parse::<usize>();
+                    if let Ok(value) = value {
+                        rules_guard.push_back((format!("SUM: {}", value.to_string()), index));
+                        self.game.add_rule(Rule::Sum(SumRule::new(vec![], value, self.game.get_base_rule_count() + index)));
+                    }
+                    else {
+                        popup("Invalid rule value");
+                    }
+                }
+                else {
+                    rules_guard.push_back((String::from("Relation"), index));
+                    self.game.add_rule(Rule::Relation(RelationRule::new(self.game.get_base_rule_count() + index)));
+                }
             },
 
             AppMsg::RuleActive(index) => {
                 dbg!("Rule active", self.planning, self.rule_active, index, self.game.get_rule(index).get_positions());
                 let rule = self.game.get_rule(self.rule_active);
                 for pos in rule.get_positions() {
-                    let index = pos.index();
-                    let color = pos.get_sub_id(R, C)%2;
-                    dbg!("Change color", index, color);
-                    fields_guard.send(index, FieldMsg::ChangeColor(8+color));
+                    let id = pos.index();
+                    let color = pos.default_color(R, C);
+                    dbg!("Change color", id, color);
+                    fields_guard.send(id, FieldMsg::ChangeColor(color));
                 }
                 
                 self.rule_active = index;

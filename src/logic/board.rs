@@ -22,8 +22,8 @@ impl Position {
         (self.row - 1) + (self.col - 1)*SIDE
     }
 
-    pub fn get_sub_id(&self, r: usize, c: usize) -> usize {
-        (self.row - 1) / r + (self.col - 1) / c
+    pub fn default_color(&self, r: usize, c: usize) -> usize {
+        8 + (((self.row - 1) / r + (self.col - 1) / c)%2)
     }
 
     pub fn row(&self) -> usize {
@@ -33,6 +33,8 @@ impl Position {
     pub fn col(&self) -> usize {
         self.col
     }
+
+
 }
 
 impl std::fmt::Debug for Position {

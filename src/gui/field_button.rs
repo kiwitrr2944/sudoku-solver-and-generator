@@ -91,7 +91,7 @@ impl FactoryComponent for Field {
                 gtk::Button {
                     set_css_classes: choose_color!(self.color),
                     set_label: &self.display_value,
-                    set_size_request: (100, 50), // Set the size of the button
+                    set_size_request: (100, 50), 
                     connect_clicked => FieldMsg::ChangeValue,
                     set_margin_all: 5,
                 }
@@ -108,7 +108,6 @@ impl FactoryComponent for Field {
             }
             FieldMsg::SetValue(value) => {
                 self.value = value;
-                dbg!(self.value, self.index, "set");
                 self.display_value = match value {
                     0 => String::from("_"),
                     _ => value.to_string(),

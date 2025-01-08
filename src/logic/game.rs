@@ -67,6 +67,10 @@ impl Game {
         self.rules[index + self.base_rule_count].add_position(pos);
     }
 
+    pub fn remove_position_from_rule(&mut self, index: usize, pos: Position) {
+        self.rules[index + self.base_rule_count].remove_position(pos);
+    }
+
     pub fn get_rule(&self, index: usize) -> Rule {
         self.rules[index + self.base_rule_count].clone()
     }

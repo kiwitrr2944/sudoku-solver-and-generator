@@ -28,7 +28,7 @@ impl Rule {
         match self {
             Rule::Sum(r) => r.positions.clone(),
             Rule::Permutation(r) => r.positions.clone(),
-            Rule::Relation(r) => vec![r.position1, r.position2],
+            Rule::Relation(r) => r.positions.clone(),
         }
     }
 
@@ -36,7 +36,15 @@ impl Rule {
         match self {
             Rule::Sum(r) => r.positions.push(pos),
             Rule::Permutation(r) => r.positions.push(pos),
-            Rule::Relation(_r) => {}
+            Rule::Relation(r) => r.positions.push(pos),
+        }
+    }
+
+    pub fn remove_position(&mut self, pos: Position) {
+        match self {
+            Rule::Sum(r) => r.positions.retain(|&x| x != pos),
+            Rule::Permutation(r) => r.positions.retain(|&x| x != pos),
+            Rule::Relation(r) => r.positions.retain(|&x| x != pos),
         }
     }
 
@@ -133,27 +141,30 @@ impl PermutationRule {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct RelationRule {
-    pub position1: Position,
-    pub position2: Position,
+    pub positions: Vec<Position>,
     index: usize,
 }
 
 impl RelationRule {
-    pub fn new(position1: Position, position2: Position, index: usize) -> Self {
-        RelationRule { position1, position2, index}
+    pub fn new(index: usize) -> Self {
+        RelationRule { positions: vec![], index}
     }
+
     pub fn check(&self, board: &Board) -> RuleCheckResult {
-        let value1 = board.get_value(Some(self.position1));
-        let value2 = board.get_value(Some(self.position2));
+        if self.positions.len() != 2 {
+            return RuleCheckResult::Ok;
+        }
+        let value1 = board.get_value(Some(self.positions[0]));
+        let value2 = board.get_value(Some(self.positions[1]));
         if value1 == 0 || value2 == 0 {
             RuleCheckResult::Unfulfilled(format!(
                 "(relation): position {:?} or {:?} not filled",
-                self.position1, self.position2
+                self.positions[0], self.positions[1]
             ))
         } else if value1 >= value2 {
             RuleCheckResult::Critical(format!(
                 "(relation): position {:?} should be less than {:?}",
-                self.position1, self.position2
+                self.positions[0], self.positions[1]
             ))
         } else {
             RuleCheckResult::Ok
