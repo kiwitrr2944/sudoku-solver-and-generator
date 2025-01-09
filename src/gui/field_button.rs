@@ -1,19 +1,12 @@
+use crate::choose_color;
 use gtk::prelude::{BoxExt, ButtonExt, OrientableExt, WidgetExt};
-use relm4::factory::positions::GridPosition;
-use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
+use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position, positions::GridPosition};
 use relm4::RelmWidgetExt;
 
-#[warn(unknown_lints, reason = "CHANGEDIMENSION")]
-const N: usize = 6;
-const COLOR_LIST: [&str; 10] = [
-    "red", "green", "purple", "orange", "pink", "brown", "black", "yellow", "white", "grey",
+const N: usize = 9;
+const COLOR_LIST: [&str; 9] = [
+    "red", "green", "purple", "orange", "pink", "brown", "yellow", "white", "grey",
 ];
-
-macro_rules! choose_color {
-    ($color_index:expr) => {
-        &[&COLOR_LIST[$color_index]]
-    };
-}
 
 #[derive(Debug)]
 pub struct Field {
@@ -27,8 +20,8 @@ pub struct Field {
 pub enum FieldMsg {
     ChangeColor(usize),
     ChangeValue,
-    SetValue(usize),
     SetHints(Vec<usize>),
+    SetValue(usize),
 }
 
 #[derive(Debug)]
@@ -117,10 +110,7 @@ impl FactoryComponent for Field {
                     .unwrap();
             }
             FieldMsg::SetValue(value) => {
-                dbg!(value);
-                if value == N+1 {
-                    self.value = self.value;
-                } else {
+                if value != N + 1 {
                     self.value = value;
                 }
                 self.display_value = match self.value {
@@ -130,10 +120,15 @@ impl FactoryComponent for Field {
             }
             FieldMsg::ChangeColor(color) => {
                 self.color = color;
-            },
+            }
             FieldMsg::SetHints(hint) => {
-                let hintstr = hint.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
-                self.display_value = hintstr;
+                if self.value == 0 {
+                    self.display_value = hint
+                        .iter()
+                        .map(|x| x.to_string())
+                        .collect::<Vec<String>>()
+                        .join(" ");
+                }
             }
         }
     }

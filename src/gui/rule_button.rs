@@ -1,17 +1,12 @@
+use crate::choose_color;
 use gtk::prelude::{BoxExt, ButtonExt, OrientableExt, WidgetExt};
 use relm4::factory::positions::GridPosition;
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position};
 use relm4::RelmWidgetExt;
 
-const COLOR_LIST: [&str; 8] = [
-    "red", "green", "purple", "orange", "pink", "brown", "black", "yellow",
+const COLOR_LIST: [&str; 7] = [
+    "red", "green", "purple", "orange", "pink", "brown", "yellow",
 ];
-
-macro_rules! choose_color {
-    ($color_index:expr) => {
-        &[&COLOR_LIST[$color_index]]
-    };
-}
 
 #[derive(Debug)]
 pub struct RuleButton {

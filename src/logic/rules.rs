@@ -60,7 +60,7 @@ impl Rule {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SumRule {
     pub positions: Vec<Position>,
-    pub sum: usize,
+    sum: usize,
     index: usize,
 }
 
@@ -73,12 +73,12 @@ impl SumRule {
         }
     }
 
+    pub fn get_sum(&self) -> usize {
+        self.sum
+    }
+
     pub fn check(&self, board: &Board) -> RuleCheckResult {
-        let current_sum: usize = self
-            .positions
-            .iter()
-            .map(|&pos| board.get_value(pos))
-            .sum();
+        let current_sum: usize = self.positions.iter().map(|&pos| board.get_value(pos)).sum();
 
         match current_sum.cmp(&self.sum) {
             std::cmp::Ordering::Less => RuleCheckResult::Unfulfilled(format!(
@@ -160,8 +160,10 @@ impl RelationRule {
         if self.positions.len() != 2 {
             return RuleCheckResult::Ok;
         }
+        
         let value1 = board.get_value(self.positions[0]);
         let value2 = board.get_value(self.positions[1]);
+
         if value1 == 0 || value2 == 0 {
             RuleCheckResult::Unfulfilled(format!(
                 "(relation): position {:?} or {:?} not filled",

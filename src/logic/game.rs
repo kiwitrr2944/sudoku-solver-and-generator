@@ -38,7 +38,6 @@ impl Game {
 
         for sub_row in 0..side / sub_rows {
             for sub_col in 0..side / sub_cols {
-                dbg!(sub_row, sub_col, "----------");
                 let mut positions = Vec::new();
                 for row in 1..=sub_rows {
                     for col in 1..=sub_cols {
@@ -54,7 +53,6 @@ impl Game {
             }
         }
 
-        dbg!(&game.rules);
         game.base_rule_count = rc;
         game
     }
@@ -111,21 +109,19 @@ impl Game {
         )
     }
 
-    pub fn save_to_file(&self, filename: &str) {
+    pub fn save_to_file(&self, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
         let path = Path::new(filename);
-        let serialized = serde_json::to_string(&self).unwrap();
-        dbg!("Saving to file");
-        let _ = fs::write(path, serialized);
+        let serialized = serde_json::to_string(&self)?;
+
+        fs::write(path, serialized)?;
+        Ok(())
     }
 
-    pub fn load_from_file(filename: &str) -> Self {
+    pub fn load_from_file(filename: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let path = Path::new(filename);
-        let serialized = fs::read_to_string(path).unwrap();
-        serde_json::from_str(&serialized).unwrap()
-    }
-
-    pub fn display(&self) {
-        print!("{}", self.board());
+        let serialized = fs::read_to_string(path)?;
+        let game = serde_json::from_str(&serialized)?;
+        Ok(game)
     }
 
     pub fn board(&self) -> Board {

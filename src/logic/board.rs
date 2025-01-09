@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 
-#[warn(unknown_lints, reason = "CHANGEDIMENSION")]
-const SIDE: usize = 6;
+const N: usize = 9;
+
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Position {
     row: usize,
@@ -11,7 +11,7 @@ pub struct Position {
 
 impl Position {
     pub fn new(row: usize, col: usize) -> Option<Self> {
-        if (1..=SIDE).contains(&row) && (1..=SIDE).contains(&col) {
+        if (1..=N).contains(&row) && (1..=N).contains(&col) {
             Some(Position { row, col })
         } else {
             None
@@ -19,17 +19,21 @@ impl Position {
     }
 
     pub fn from_index(index: usize) -> Option<Self> {
-        let row = index % SIDE + 1;
-        let col = index / SIDE + 1;
+        let row = index % N + 1;
+        let col = index / N + 1;
         Position::new(row, col)
     }
 
+    pub fn coords(&self) -> (usize, usize) {
+        (self.row - 1, self.col - 1)
+    }
+
     pub fn index(&self) -> usize {
-        (self.row - 1) + (self.col - 1) * SIDE
+        (self.row - 1) + (self.col - 1) * N
     }
 
     pub fn default_color(&self, r: usize, c: usize) -> usize {
-        8 + (((self.row - 1) / r + (self.col - 1) / c) % 2)
+        7 + (((self.row - 1) / r + (self.col - 1) / c) % 2)
     }
 
     pub fn row(&self) -> usize {
@@ -73,10 +77,6 @@ impl Board {
 
     pub fn get_side(&self) -> usize {
         self.side
-    }
-
-    pub fn clear_value(&mut self, pos: Position) {
-        self.set_value(pos, 0);
     }
 }
 

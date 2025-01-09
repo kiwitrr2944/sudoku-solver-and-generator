@@ -9,3 +9,10 @@ macro_rules! for_pos {
         }
     };
 }
+
+#[macro_export]
+macro_rules! choose_color {
+    ($color_index:expr) => {
+        &[&COLOR_LIST[$color_index]]
+    };
+}

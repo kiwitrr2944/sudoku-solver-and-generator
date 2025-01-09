@@ -1,0 +1,45 @@
+.green {
+    background: #66cdaa;
+}
+
+.grey {
+    background: #BBBBBB;
+    font-size: 20px;
+}
+
+.blue {
+    background: #99CCFF;
+}
+
+.red {
+    background: #FF9980;
+}
+
+.yellow {
+    background: #FFFF99;
+}
+
+.purple {
+    background: #B266B2;
+}
+
+.orange {
+    background: #FFCC99;
+}
+
+.pink {
+    background: #FFD6DD;
+}
+
+.brown {
+    background: #D9A3A3;
+}
+
+.black {
+    background: #333333;
+}
+
+.white {
+    background: #F2F2F2;
+    font-size: 20px;
+}
