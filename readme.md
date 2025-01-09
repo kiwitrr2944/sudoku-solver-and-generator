@@ -11,7 +11,14 @@ libgtk-4-dev
 
 Niestety jest to zależne od komputera i nie jestem w stanie podać dokładnej listy :(.
 
-
+Co ja instalowałem (nie wszystko musi być potrzebne):
+```sudo apt-get install build-essential
+sudo apt-get install libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
+sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+sudo apt-get install libegl1-mesa libgl1-mesa-glx libx11-dev
+sudo apt-get install libwayland-dev libxkbcommon-dev
+sudo apt-get install libgtk-4-dev libgdk-pixbuf-2.0-dev
+```
 
 
 ## Początkowy opis projektu
