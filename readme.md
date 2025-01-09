@@ -5,7 +5,12 @@ Aplikacja może być nieczytelna w systemowym darkmode.
 ## Uruchamianie
 Do uruchomienia aplikacji wymagane jest wiele bibliotek systemowych wymaganych przez relm4/gtk.
 
-W związku z tym po wpisaniu `cargo run` możliwe, że pojawi się błąd brak biblioteki: ***
+W związku z tym po wpisaniu `cargo run` (koniecznie w folderze zawierającym src/ , bo inaczej .css się nie załaduje) możliwe, że pojawią się błędy braku bibliotek: np.  
+glib2.0-dev  
+libgtk-4-dev
+
+Niestety jest to zależne od komputera i nie jestem w stanie podać dokładnej listy :(.
+
 
 
 
