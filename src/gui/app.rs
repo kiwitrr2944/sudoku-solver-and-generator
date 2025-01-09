@@ -1,15 +1,17 @@
-use crate::{for_pos, choose_color};
 use super::field_button::*;
 use super::rule_button::*;
 use crate::logic::board::Position;
 use crate::logic::game;
 use crate::logic::rules::{PermutationRule, RelationRule, Rule, SumRule};
 use crate::logic::solver::Solver;
+use crate::{choose_color, for_pos};
 use gtk::glib::Propagation;
-use gtk::prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt, EntryExt, PopoverExt, ButtonExt, GridExt, DialogExt, EntryBufferExtManual};
+use gtk::prelude::{
+    BoxExt, ButtonExt, DialogExt, EntryBufferExtManual, EntryExt, GridExt, GtkWindowExt,
+    OrientableExt, PopoverExt, WidgetExt,
+};
 use relm4::factory::FactoryVecDeque;
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
-
 
 const COLOR_LIST: [&str; 10] = [
     "white", "grey", "red", "green", "purple", "orange", "pink", "brown", "black", "yellow",
@@ -32,7 +34,6 @@ fn popup(text: &str) {
     });
     dialog.show();
 }
-
 
 pub struct App {
     fields: FactoryVecDeque<Field>,
@@ -86,21 +87,21 @@ impl SimpleComponent for App {
                     #[name(value_label)]
                     gtk::Label {
                         #[watch]
-                        set_label: &format!("Value: {}. Click 'h' to show help", model.global_value),
+                        set_label: &format!("Value: {}. Planning? {}. Click 'h' to show help", model.global_value, model.planning),
                     },
 
                     gtk::Box {
                         set_orientation: gtk::Orientation::Vertical,
-                        
+
                         #[name(custom_rules)]
                         gtk::Box {
-                            #[watch]
-                            set_visible: model.planning,
                             set_orientation: gtk::Orientation::Horizontal,
 
                             gtk::Box {
                                 gtk::MenuButton {
                                     set_label: "Add rule",
+                                    #[watch]
+                                    set_visible: model.planning,
                                     set_direction: gtk::ArrowType::Right,
 
                                     #[wrap(Some)]
@@ -138,7 +139,6 @@ impl SimpleComponent for App {
                                     },
                                 },
 
-
                                 #[local_ref]
                                 rule_grid -> gtk::Grid {
                                     set_orientation: gtk::Orientation::Vertical,
@@ -170,7 +170,7 @@ impl SimpleComponent for App {
                                     sender.input(AppMsg::Load(path.into()));
                                 }
                             }
-                        }, 
+                        },
                         gtk::Box {
                             set_orientation: gtk::Orientation::Horizontal,
                             gtk::Label {
@@ -282,10 +282,8 @@ impl SimpleComponent for App {
                         fields_guard.send(index, FieldMsg::ChangeColor(self.rule_active));
                     }
                 } else {
-                    self.game.set_value(
-                        Position::from_index(index).unwrap(),
-                        self.global_value,
-                    );
+                    self.game
+                        .set_value(Position::from_index(index).unwrap(), self.global_value);
                     let state = self.game.check_rules();
 
                     if let (None, None) = state {
@@ -303,19 +301,18 @@ impl SimpleComponent for App {
             AppMsg::Hints => {
                 if self.hints {
                     for_pos!(N, |pos: Position| {
-                        fields_guard.send(pos.index(), FieldMsg::SetValue(N+1));
+                        fields_guard.send(pos.index(), FieldMsg::SetValue(N + 1));
                     });
                     self.hints = false;
                 } else {
                     let solver = Solver::new(self.game.clone(), false);
-                    
+
                     for_pos!(N, |pos: Position| {
                         let hints = solver.get_options(pos);
                         fields_guard.send(pos.index(), FieldMsg::SetHints(hints));
                     });
                     self.hints = true;
                 }
-                    
             }
 
             AppMsg::Solve => {
@@ -421,13 +418,14 @@ impl SimpleComponent for App {
             }
 
             AppMsg::Generate => {
+                self.finished = 0;
                 let game = Solver::generate(self.game.clone());
                 if let Some(game) = game {
                     self.game = game;
                     for_pos!(N, |pos: Position| {
-                            let sval = self.game.get_value(pos);
-                            self.game.set_value(pos, sval);
-                            fields_guard.send(pos.index(), FieldMsg::SetValue(sval));
+                        let sval = self.game.get_value(pos);
+                        self.game.set_value(pos, sval);
+                        fields_guard.send(pos.index(), FieldMsg::SetValue(sval));
                     });
                 } else {
                     sender.input(AppMsg::Wrong);
@@ -451,15 +449,16 @@ impl SimpleComponent for App {
             }
 
             AppMsg::Load(path) => {
+                self.finished = 0;
                 let loaded = game::Game::load_from_file(&path);
-                
+
                 match loaded {
                     Ok(game) => {
                         self.game = game;
                     }
                     Err(e) => {
                         popup(&format!("Error loading game: {}", e));
-                        return ;
+                        return;
                     }
                 }
                 rules_guard.clear();
@@ -470,13 +469,21 @@ impl SimpleComponent for App {
                     fields_guard.send(pos.index(), FieldMsg::SetValue(sval));
                 });
 
-                for rule in self.game.rules().iter().skip(self.game.get_base_rule_count()) {
+                for rule in self
+                    .game
+                    .rules()
+                    .iter()
+                    .skip(self.game.get_base_rule_count())
+                {
                     let index = rules_guard.len();
-                    rules_guard.push_back((match rule {
-                        Rule::Permutation(_) => "Permutation".to_string(),
-                        Rule::Sum(sum) => format!("Sum: {}", sum.get_sum()),
-                        Rule::Relation(_) => "Relation".to_string(),
-                    }, index));
+                    rules_guard.push_back((
+                        match rule {
+                            Rule::Permutation(_) => "Permutation".to_string(),
+                            Rule::Sum(sum) => format!("Sum: {}", sum.get_sum()),
+                            Rule::Relation(_) => "Relation".to_string(),
+                        },
+                        index,
+                    ));
                 }
             }
         }

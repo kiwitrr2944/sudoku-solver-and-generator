@@ -1,6 +1,8 @@
 use crate::choose_color;
 use gtk::prelude::{BoxExt, ButtonExt, OrientableExt, WidgetExt};
-use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender, Position, positions::GridPosition};
+use relm4::factory::{
+    positions::GridPosition, DynamicIndex, FactoryComponent, FactorySender, Position,
+};
 use relm4::RelmWidgetExt;
 
 const N: usize = 9;

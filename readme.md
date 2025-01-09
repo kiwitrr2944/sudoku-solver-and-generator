@@ -1,10 +1,13 @@
 # Sudoku Solver + Generator
 Zbudowane za pomocą [Relm4](https://relm4.org).
+Aplikacja może być nieczytelna w systemowym darkmode.
 
 ## Uruchamianie
 Do uruchomienia aplikacji wymagane jest wiele bibliotek systemowych wymaganych przez relm4/gtk.
 
-W związku z tym po wpisaniu '''cargo run''' możliwe, że pojawi się błąd 
+W związku z tym po wpisaniu `cargo run` możliwe, że pojawi się błąd brak biblioteki: ***
+
+
 
 ## Początkowy opis projektu
 Chciałbym stworzyć aplikację, która umożliwi użytkownikowi generowanie sudoku o wzbogaconych regułach.
@@ -65,6 +68,8 @@ W dowolnym momencie w trybie użytkownika można wcisnąć klawisz 'f'. Wbudowan
 Solver był testowany empirycznie i już się nie zapętla, więc na pewno się zatrzyma, ale może trwać to bardzo długo. 
 
 Wciśnięcie klawisza 'v' wypisuje po prawej stronie ekranu wszystkie aktualnie niespełnione reguły.
+
+Wciśnięcie klawisza 'h' odpala popup z skrótem powyższych komend.
 
 ## Zapis/odczyt z pliku
 Na dole okna są dwa pola tekstowe. Można przy ich pomocy zapisać lub wczytać grę z pliku. W przypadku błędu program wypisze stosowny komunikat.

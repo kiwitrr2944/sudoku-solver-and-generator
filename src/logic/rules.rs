@@ -160,7 +160,7 @@ impl RelationRule {
         if self.positions.len() != 2 {
             return RuleCheckResult::Ok;
         }
-        
+
         let value1 = board.get_value(self.positions[0]);
         let value2 = board.get_value(self.positions[1]);
 
