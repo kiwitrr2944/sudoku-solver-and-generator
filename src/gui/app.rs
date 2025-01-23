@@ -267,7 +267,7 @@ impl SimpleComponent for App {
 
         match msg {
             AppMsg::FieldClicked(index) => {
-                if self.planning {
+                if self.planning && rules_guard.len() > 0 {
                     if rules_guard.is_empty() {
                         return;
                     }
