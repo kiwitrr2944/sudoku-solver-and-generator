@@ -79,7 +79,6 @@ impl SimpleComponent for App {
             gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 50,
-                set_margin_all: 50,
                 set_css_classes: &["white"],
 
                 gtk::Box {
@@ -103,7 +102,6 @@ impl SimpleComponent for App {
                                     #[watch]
                                     set_visible: model.planning,
                                     set_direction: gtk::ArrowType::Right,
-
                                     #[wrap(Some)]
                                     set_popover: popover = &gtk::Popover {
                                         set_position: gtk::PositionType::Right,
@@ -163,6 +161,7 @@ impl SimpleComponent for App {
                                 set_label: "Load from file: ",
                             },
                             gtk::Entry {
+                                set_css_classes: &["white"],
                                 connect_activate[sender] => move |entry| {
                                     let buffer = entry.buffer();
                                     let path = buffer.text();
@@ -177,6 +176,7 @@ impl SimpleComponent for App {
                                 set_label: "Save game to file: ",
                             },
                             gtk::Entry {
+                                set_css_classes: &["white"],
                                 connect_activate[sender] => move |entry| {
                                     let buffer = entry.buffer();
                                     let path = buffer.text();

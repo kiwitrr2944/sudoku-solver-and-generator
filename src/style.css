@@ -5,6 +5,7 @@
 .grey {
     background: #d6d6d6;
     font-size: 20px;
+    color: #000000;
 }
 
 .blue {
@@ -42,4 +43,5 @@
 .white {
     background: #F2F2F2;
     font-size: 20px;
+    color: #000000;
 }
