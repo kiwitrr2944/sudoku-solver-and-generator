@@ -4,6 +4,7 @@ use crate::logic::board::Position;
 use crate::logic::game;
 use crate::logic::rules::{PermutationRule, RelationRule, Rule, SumRule};
 use crate::logic::solver::Solver;
+use crate::logic::solver::generate;
 use crate::{choose_color, for_pos};
 use gtk::glib::Propagation;
 use gtk::prelude::{
@@ -79,6 +80,7 @@ impl SimpleComponent for App {
             gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 50,
+                set_margin_all: 5,
                 set_css_classes: &["white"],
 
                 gtk::Box {
@@ -419,7 +421,7 @@ impl SimpleComponent for App {
 
             AppMsg::Generate => {
                 self.finished = 0;
-                let game = Solver::generate(self.game.clone());
+                let game = generate(self.game.clone());
                 if let Some(game) = game {
                     self.game = game;
                     for_pos!(N, |pos: Position| {

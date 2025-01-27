@@ -229,27 +229,28 @@ impl Solver {
 
     pub fn get_solution(&self) -> Option<Board> {
         self.solution.clone()
+    }    
+}
+
+
+pub fn generate(mut game: Game) -> Option<Game> {
+    let mut solver = Solver::new(game.clone(), true);
+
+    solver.solve();
+    solver.get_solution()?;
+
+    let mut part_board = solver.get_solution().unwrap();
+
+    let mut positions: Vec<Position> = (1..=solver.n)
+        .flat_map(|row| (1..=solver.n).filter_map(move |col| Position::new(row, col)))
+        .collect();
+
+    positions.shuffle(&mut solver.rng);
+
+    for pos in positions.into_iter().take(solver.n * solver.n / 4 * 3) {
+        part_board.set_value(pos, 0);
     }
 
-    pub fn generate(mut game: Game) -> Option<Game> {
-        let mut solver = Solver::new(game.clone(), true);
-
-        solver.solve();
-        solver.get_solution()?;
-
-        let mut part_board = solver.get_solution().unwrap();
-
-        let mut positions: Vec<Position> = (1..=solver.n)
-            .flat_map(|row| (1..=solver.n).filter_map(move |col| Position::new(row, col)))
-            .collect();
-
-        positions.shuffle(&mut solver.rng);
-
-        for pos in positions.into_iter().take(solver.n * solver.n / 3 * 2) {
-            part_board.set_value(pos, 0);
-        }
-
-        game.set_board(part_board);
-        Some(game)
-    }
+    game.set_board(part_board);
+    Some(game)
 }
